@@ -48,10 +48,12 @@
 
 .light-square {
     background-color: rgb(227,193,111);
+    border: 5px solid rgb(227,193,111);
 }
 
 .dark-square {
     background-color: rgb(184,139,74);
+    border: 5px solid rgb(184,139,74);
 }
 
 .square {
@@ -61,10 +63,18 @@
 }
 
 img {
-    height: 69px;
-    width: 69px;
+    height: 65px;
+    width: 65px;
     user-select: none;
     -moz-user-select: none;
     -webkit-user-select: none;
     -ms-user-select: none;
+}
+
+button {
+    height: 20px;
+}
+
+.highlight {
+    border: 5px solid yellow;
 }

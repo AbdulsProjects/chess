@@ -6,6 +6,9 @@ import pieces from "./pieces"
 //Split the drop handler for on / off board
 //Make a click handler work for placing pieces too
 //Add a bin div element that can be used to remove pieces (add a double-click handler that does the same)
+//Potentially change the pieces model to allow for all pieces along the path to be captured
+//See if you can tidy up the function that finds the targettable squares, and change the knight object to move clockwise
+//Update the squares in state after the targettable squares are found in state for calculating check / highlighting the correct squares
 
 export function Chess() {
 
@@ -15,10 +18,11 @@ export function Chess() {
         name: string,
         piece: string | null,
         color: string | null,
-        position: number[]
-    }
+        x: number,
+        y: number,
+        firstTurn: boolean
 
-    console.log(pieces);
+    } 
 
     //Storing the board / game state in state
     const [board, setBoard] = useState<Square[]>([]);
@@ -33,7 +37,9 @@ export function Chess() {
                     name: String.fromCharCode(j) + i,
                     piece: null,
                     color: null,
-                    position: [j-64, i]
+                    x: j-64,
+                    y: i,
+                    firstTurn: false
                 });
             }
         }
@@ -88,7 +94,8 @@ export function Chess() {
                 return {
                     ...square,
                     color: color,
-                    piece: piece
+                    piece: piece,
+                    firstTurn: true
                 }
             }
         })
@@ -128,7 +135,8 @@ export function Chess() {
                 return {
                     ...square,
                     color: null,
-                    piece: null
+                    piece: null,
+                    firstTurn: false
                 }
             }
         })
@@ -149,14 +157,135 @@ export function Chess() {
             squares[i].addEventListener("drop", () => MovePiece());
         }
 
+        //Updating the handlers of all pieces
+        const pieces = document!.querySelectorAll('[id$=Piece]');//getElementsByClassName("piece");
+        for(let i=0; i < pieces.length; i++) {
+            pieces[i].addEventListener("click", (e) => SelectPiece(e));
+            pieces[i].addEventListener("dragstart", (e) => SelectPiece(e));
+        }
+
         //Updating state
         setStartGame(true);
 
     }
 
     const MovePiece = () => {
-        console.log("Move");
+        //Steps
+        //1) 
     }
+
+    const SelectPiece = (e: Event) => {
+        //Steps
+        //1) Identify the square targetted
+        //2) Identify which squares can be moved to (use a reusable function call)
+        //Removing highlights from currently highlighted piece
+        RemoveHighlights();
+
+        //Selecting the piece / square
+        const piece = (e.target as HTMLElement);
+        if (!piece || !piece.parentElement) { return }
+        const squareName = piece.parentElement.id;
+
+        //Calculating possible moves
+        CalculateMoves(board, squareName);
+
+        //Adding a highlight to all possible moves
+        piece.parentElement.classList.add("highlight");
+    }
+
+    //Removing the highlights from all squares
+    const RemoveHighlights = () => {
+        const squares = document.getElementsByClassName("highlight");
+        for(let i=0; i < squares.length; i++) {
+            squares[i].classList.remove("highlight");
+        }
+    }
+
+    //Returning all possible moves
+    const CalculateMoves = (board: Square[], selectedSquare: string) => {
+        //REFACTORING: Make it return a single object with props of name / moveable / capture. See if I can somehow remove some vars, and potentially convert these into
+        //a map that returns an array
+
+
+        //Assigning the selected square
+        const square = board.find(square => {
+            return square.name === selectedSquare;
+        });
+        if (!square) { return }
+        
+
+        //Returning the corresponding piece object
+        const pieceObj = pieces.find(piece => {
+            return piece.id === square.piece;
+        });
+        if (!pieceObj) { return }
+        
+        //Defining the return arrays. targettableSquares includes squares that are blocked by pieces in the way, moveableSquares does not
+        const targettableSquares: string[] = [];
+        const moveableSquares: string[] = [];
+
+        //Iterating over each movement direction to determine which squares can be moved to / targetted
+        pieceObj.movement.forEach(direction => {
+            let currentX = square.x;
+            let currentY = square.y;
+            let blocked = false;
+            let capture = false;
+            let outOfBounds = false;
+
+            //Repeating the movement for repeatable patterns
+            for (let i = 0; i < direction.range; i++) {
+                //Following the specified path. This allows for pieces that can only capture at the end of a specified path to be created
+                direction.path.forEach((step, index, path) => {
+                    //Calculating the next square
+                    currentX += step[0];
+                    currentY += step[1];
+                    //Retrieving the square from state
+                    const targetSquare = board.find((square) => {
+                        return square.x === currentX && square.y === currentY;
+                    })
+
+                    //Exitting the loop if the square is out of bounds
+                    if (!targetSquare) { 
+                        outOfBounds = true;
+                        return;
+                    }
+
+                    //Setting blocked = true if there is a piece on a square that isn't a capture square
+                    if (targetSquare.piece !== null) {
+                        if (index !== path.length - 1 || direction.moveOnly) {
+                            blocked = true;
+                        } else {
+                            capture = true;
+                        }
+                    }
+                });
+
+                if (outOfBounds) { return; }
+            
+                const targetSquareName = board.find((square) => square.x === currentX && square.y === currentY)!.name
+
+                if (!blocked) {
+                    moveableSquares.push(targetSquareName);
+                    if (capture) { blocked=true; }
+                }
+                targettableSquares.push(targetSquareName);
+
+                //When the tile is returned, this is where it's added to the array
+            };
+        });
+        
+        //const piece = pieces[board[selectedSquare]]
+
+        //Need to return an object like this:
+        // {
+        //     moveableSquares: ['A1', 'A2'];
+        //     targettedSquares: ['A1', 'A2', 'A3']
+        // }
+        console.log(targettableSquares);
+        console.log(moveableSquares);
+        
+    };
+
 
     return (
         <div className="main-container" onDrop={RemovePiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
@@ -182,17 +311,17 @@ export function Chess() {
             <div>
                 <img src="img/white_pawn.png" id="White Pawn" alt="White Pawn" onDragStart={(e) => DragPiece(e, "White", "Pawn")}/>
             </div>
-            <img src="img/white_rook.png" id="White Rook" alt="White Rook" onDragStart={(e) => DragPiece(e, "White", "Rook")}/>
-            <img src="img/white_knight.png" id="White Knight" alt="White Knight" onDragStart={(e) => DragPiece(e, "White", "Knight")}/>
-            <img src="img/white_bishop.png" id="White Bishop" alt="White Bishop" onDragStart={(e) => DragPiece(e, "White", "Bishop")}/>
-            <img src="img/white_queen.png" id="White Queen" alt="White Queen" onDragStart={(e) => DragPiece(e, "White", "Queen")}/>
-            <img src="img/white_king.png" id="White King" alt="White King" onDragStart={(e) => DragPiece(e, "White", "King")}/>
-            <img src="img/black_pawn.png" id="Black Pawn" alt="Black Pawn" onDragStart={(e) => DragPiece(e, "Black", "Pawn")}/>
-            <img src="img/black_rook.png" id="Black Rook" alt="Black Rook" onDragStart={(e) => DragPiece(e, "Black", "Rook")}/>
-            <img src="img/black_knight.png" id="Black Knight" alt="Black Knight" onDragStart={(e) => DragPiece(e, "Black", "Knight")}/>
-            <img src="img/black_bishop.png" id="Black Bishop" alt="Black Bishop" onDragStart={(e) => DragPiece(e, "Black", "Bishop")}/>
-            <img src="img/black_queen.png" id="Black Queen" alt="Black Queen" onDragStart={(e) => DragPiece(e, "Black", "Queen")}/>
-            <img src="img/black_king.png" id="Black King" alt="Black King" onDragStart={(e) => DragPiece(e, "Black", "King")}/>
+            <img src="img/white_rook.png" id="White Rook" alt="White Rook" onDragStart={(e) => DragPiece(e, "white", "rook")}/>
+            <img src="img/white_knight.png" id="White Knight" alt="White Knight" onDragStart={(e) => DragPiece(e, "white", "knight")}/>
+            <img src="img/white_bishop.png" id="White Bishop" alt="White Bishop" onDragStart={(e) => DragPiece(e, "white", "bishop")}/>
+            <img src="img/white_queen.png" id="White Queen" alt="White Queen" onDragStart={(e) => DragPiece(e, "white", "queen")}/>
+            <img src="img/white_king.png" id="White King" alt="White King" onDragStart={(e) => DragPiece(e, "white", "king")}/>
+            <img src="img/black_pawn.png" id="Black Pawn" alt="Black Pawn" onDragStart={(e) => DragPiece(e, "black", "pawn")}/>
+            <img src="img/black_rook.png" id="Black Rook" alt="Black Rook" onDragStart={(e) => DragPiece(e, "black", "rook")}/>
+            <img src="img/black_knight.png" id="Black Knight" alt="Black Knight" onDragStart={(e) => DragPiece(e, "black", "knight")}/>
+            <img src="img/black_bishop.png" id="Black Bishop" alt="Black Bishop" onDragStart={(e) => DragPiece(e, "black", "bishop")}/>
+            <img src="img/black_queen.png" id="Black Queen" alt="Black Queen" onDragStart={(e) => DragPiece(e, "black", "queen")}/>
+            <img src="img/black_king.png" id="Black King" alt="Black King" onDragStart={(e) => DragPiece(e, "black", "king")}/>
             <button onClick={StartGame}>Start Game</button>
         </div>
     )

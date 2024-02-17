@@ -1,17 +1,14 @@
+//Piece movement is designed like this to allow for custom pieces to be created by the user in the future
+
 interface Piece {
     id: string,
     name: string,
     points: number,
-    movement: PieceMovement[]
+    movement: Movement[]
 }
 
-interface PieceMovement {
-    directions: Direction[]
-}
-
-interface Direction {
+interface Movement {
     firstMoveOnly?: boolean,
-    noCollision?: boolean,
     captureOnly?: boolean,
     moveOnly?: boolean,
     path: number[][],
@@ -24,8 +21,6 @@ const pieces: Piece[] = [
     name: "pawn",
     points: 1,
     movement: [
-        {
-        directions: [
         {
             moveOnly: true,
             firstMoveOnly: true,
@@ -46,8 +41,8 @@ const pieces: Piece[] = [
             captureOnly: true,
             path: [[1,1]],
             range: 1
-        }],
         }
+        
     ]
 },
 {
@@ -55,8 +50,6 @@ const pieces: Piece[] = [
     name: "bishop",
     points: 3,
     movement: [
-        {
-        directions: [
         {
             path: [[-1,-1]],
             range: 7
@@ -72,7 +65,6 @@ const pieces: Piece[] = [
         {
             path: [[1,1]],
             range: 7
-        }],
         }
     ]
 },
@@ -82,47 +74,36 @@ const pieces: Piece[] = [
     points: 3,
     movement: [
         {
-        directions: [
-        {
-            noCollision: true,
             path: [[1,2]],
             range: 1
         },
         {
-            noCollision: true,
             path: [[2,1]],
             range: 1
         },
         {
-            noCollision: true,
             path: [[2,-1]],
             range: 1
         },
         {
-            noCollision: true,
             path: [[1,-2]],
             range: 1
         },
         {
-            noCollision: true,
             path: [[-1,2]],
             range: 1
         },
         {
-            noCollision: true,
             path: [[-2,1]],
             range: 1
         },
         {
-            noCollision: true,
             path: [[-1,-2]],
             range: 1
         },
         {
-            noCollision: true,
-            path: [[-2,1]],
+            path: [[-2,-1]],
             range: 1
-        },        ],
         }
     ]},
 {
@@ -130,8 +111,6 @@ const pieces: Piece[] = [
     name: "rook",
     points: 5,
     movement: [
-        {
-        directions: [
         {
             path: [[-1,0]],
             range: 7
@@ -147,7 +126,6 @@ const pieces: Piece[] = [
         {
             path: [[0,1]],
             range: 7
-        }],
         }
     ]
 },
@@ -156,8 +134,6 @@ const pieces: Piece[] = [
     name: "queen",
     points: 9,
     movement: [
-        {
-        directions: [
         {
             path: [[-1,-1]],
             range: 7
@@ -189,7 +165,6 @@ const pieces: Piece[] = [
         {
             path: [[0,1]],
             range: 7
-        }],
         }
     ]
 },
@@ -199,39 +174,36 @@ const pieces: Piece[] = [
     points: 0,
     movement: [
         {
-        directions: [
-            {
-                path: [[-1,-1]],
-                range: 1
-            },
-            {
-                path: [[-1,1]],
-                range: 1
-            },
-            {
-                path: [[1,-1]],
-                range: 1
-            },
-            {
-                path: [[1,1]],
-                range: 1
-            },        
-            {
-                path: [[-1,0]],
-                range: 1
-            },
-            {
-                path: [[1,0]],
-                range: 1
-            },
-            {
-                path: [[0,-1]],
-                range: 1
-            },
-            {
-                path: [[0,1]],
-                range: 1
-            }],
+            path: [[-1,-1]],
+            range: 1
+        },
+        {
+            path: [[-1,1]],
+            range: 1
+        },
+        {
+            path: [[1,-1]],
+            range: 1
+        },
+        {
+            path: [[1,1]],
+            range: 1
+        },        
+        {
+            path: [[-1,0]],
+            range: 1
+        },
+        {
+            path: [[1,0]],
+            range: 1
+        },
+        {
+            path: [[0,-1]],
+            range: 1
+        },
+        {
+            path: [[0,1]],
+            range: 1
         }
     ]
 }]
