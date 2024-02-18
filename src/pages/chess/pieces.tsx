@@ -7,7 +7,7 @@ interface Piece {
     movement: Movement[]
 }
 
-interface Movement {
+export interface Movement {
     firstMoveOnly?: boolean,
     captureOnly?: boolean,
     moveOnly?: boolean,

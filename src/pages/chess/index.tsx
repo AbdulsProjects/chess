@@ -178,6 +178,10 @@ export function Chess() {
         //Steps
         //1) Identify the square targetted
         //2) Identify which squares can be moved to (use a reusable function call)
+        //3) CURRENT STEP Highlight tiles returned by the CalculateMoves function
+        //4) Update state to reflect targettable / moveable squares / calculated this turn
+
+
         //Removing highlights from currently highlighted piece
         RemoveHighlights();
 
@@ -187,7 +191,7 @@ export function Chess() {
         const squareName = piece.parentElement.id;
 
         //Calculating possible moves
-        CalculateMoves(board, squareName);
+        console.log(CalculateMoves(board, squareName));
 
         //Adding a highlight to all possible moves
         piece.parentElement.classList.add("highlight");
@@ -203,9 +207,6 @@ export function Chess() {
 
     //Returning all possible moves
     const CalculateMoves = (board: Square[], selectedSquare: string) => {
-        //REFACTORING: Make it return a single object with props of name / moveable / capture. See if I can somehow remove some vars, and potentially convert these into
-        //a map that returns an array
-
 
         //Assigning the selected square
         const square = board.find(square => {
@@ -219,71 +220,88 @@ export function Chess() {
             return piece.id === square.piece;
         });
         if (!pieceObj) { return }
-        
-        //Defining the return arrays. targettableSquares includes squares that are blocked by pieces in the way, moveableSquares does not
-        const targettableSquares: string[] = [];
-        const moveableSquares: string[] = [];
 
-        //Iterating over each movement direction to determine which squares can be moved to / targetted
-        pieceObj.movement.forEach(direction => {
-            let currentX = square.x;
-            let currentY = square.y;
-            let blocked = false;
-            let capture = false;
-            let outOfBounds = false;
+        //Interfaces used in the reduce call
+        interface TargettableSquareReducer {
+            currentIteration: {
+                x: number,
+                y: number,
+                outOfBounds: boolean,
+                blocked: boolean,
+                capture: boolean
+            }
+            squares: TargettableSquare[]
+        }
+
+        interface TargettableSquare {
+            name: string,
+            moveable: boolean,
+            capture: boolean
+        }
+
+        const moves = pieceObj.movement.reduce((result: TargettableSquareReducer, direction) => {
+
+            //Resetting the variables for the current iteration
+            result.currentIteration = {
+                x: square.x,
+                y: square.y,
+                outOfBounds: false,
+                blocked: false,
+                capture: false
+            };
 
             //Repeating the movement for repeatable patterns
             for (let i = 0; i < direction.range; i++) {
-                //Following the specified path. This allows for pieces that can only capture at the end of a specified path to be created
+                //Following the specified path. This allows for pieces that can only capture at the end of a specified path to be created. forEach is used instead of reduce to allow for short circuits
                 direction.path.forEach((step, index, path) => {
                     //Calculating the next square
-                    currentX += step[0];
-                    currentY += step[1];
+                    result.currentIteration.x += step[0];
+                    result.currentIteration.y += step[1];
+
                     //Retrieving the square from state
                     const targetSquare = board.find((square) => {
-                        return square.x === currentX && square.y === currentY;
+                        return square.x === result.currentIteration.x && square.y === result.currentIteration.y;
                     })
 
-                    //Exitting the loop if the square is out of bounds
-                    if (!targetSquare) { 
-                        outOfBounds = true;
-                        return;
+                    if (!targetSquare) {
+                        result.currentIteration.outOfBounds = true;
+                        return;                        
                     }
 
                     //Setting blocked = true if there is a piece on a square that isn't a capture square
-                    if (targetSquare.piece !== null) {
+                    if (targetSquare!.piece !== null) {
                         if (index !== path.length - 1 || direction.moveOnly) {
-                            blocked = true;
+                            result.currentIteration.blocked = true;
                         } else {
-                            capture = true;
+                            result.currentIteration.capture = true;
                         }
                     }
                 });
 
-                if (outOfBounds) { return; }
+                if (result.currentIteration.outOfBounds) { return result; }
             
-                const targetSquareName = board.find((square) => square.x === currentX && square.y === currentY)!.name
+                const targetSquareName = board.find((square) => square.x === result.currentIteration.x && square.y === result.currentIteration.y)!.name
 
-                if (!blocked) {
-                    moveableSquares.push(targetSquareName);
-                    if (capture) { blocked=true; }
+                const currentTargettableSquare: TargettableSquare = {
+                    name: targetSquareName,
+                    moveable: !result.currentIteration.blocked,
+                    capture: result.currentIteration.capture
                 }
-                targettableSquares.push(targetSquareName);
 
-                //When the tile is returned, this is where it's added to the array
+                //Setting blocked for next iterations if the destination tile contains a piece
+                if (result.currentIteration.capture) { result.currentIteration.blocked=true; }
+                
+                result.squares.push(currentTargettableSquare);
+
+                //Setting capture for next iterations if the path was blocked in a previous iteration
+                if (result.currentIteration.blocked) { result.currentIteration.capture=false; }
             };
-        });
-        
-        //const piece = pieces[board[selectedSquare]]
 
-        //Need to return an object like this:
-        // {
-        //     moveableSquares: ['A1', 'A2'];
-        //     targettedSquares: ['A1', 'A2', 'A3']
-        // }
-        console.log(targettableSquares);
-        console.log(moveableSquares);
-        
+            return result;
+
+        }, { currentIteration: { x: 0, y: 0, outOfBounds: false, blocked: false, capture: false }, squares: [] });
+
+        return moves.squares;
     };
 
 
