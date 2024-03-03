@@ -1,5 +1,5 @@
 import "./style.css"
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import pieces from "./pieces"
 
 //THINGS TO DO
@@ -20,13 +20,29 @@ export function Chess() {
         color: string | null,
         x: number,
         y: number,
-        firstTurn: boolean
-
+        firstTurn: boolean,
+        movesCalculated: boolean,
+        targetedBy: TargetedBy
     } 
+
+    interface TargetedBy { 
+        black: TargetingSquare[],
+        white: TargetingSquare[]
+    }
+
+    interface TargetingSquare {
+        target: string,
+        source: string,
+        moveable: boolean,
+        capture: boolean
+    }
 
     //Storing the board / game state in state
     const [board, setBoard] = useState<Square[]>([]);
     const [startGame, setStartGame] = useState(false);
+    const boardRef = useRef<Square[]>([]);
+
+    boardRef.current = board;
 
     useEffect(() => {
         //Setting up the board
@@ -39,13 +55,17 @@ export function Chess() {
                     color: null,
                     x: j-64,
                     y: i,
-                    firstTurn: false
+                    firstTurn: false,
+                    movesCalculated: false,
+                    targetedBy: {
+                        black: [],
+                        white: []
+                    }
                 });
             }
         }
         setBoard(localBoard);
     }, [])
-
 
     //Event Handlers
     
@@ -181,7 +201,6 @@ export function Chess() {
         //3) CURRENT STEP Highlight tiles returned by the CalculateMoves function
         //4) Update state to reflect targettable / moveable squares / calculated this turn
 
-
         //Removing highlights from currently highlighted piece
         RemoveHighlights();
 
@@ -189,9 +208,39 @@ export function Chess() {
         const piece = (e.target as HTMLElement);
         if (!piece || !piece.parentElement) { return }
         const squareName = piece.parentElement.id;
+        const squareObj = board.find(square => square.name === squareName);
+        if (!squareObj) { return }
 
         //Calculating possible moves
-        console.log(CalculateMoves(board, squareName));
+        const viableMoves = CalculateMoves(board, squareName);
+        if (!viableMoves) { return }
+
+        //Updating board to reflect what squares the piece can target / move to
+        const newBoard: Square[] = boardRef.current.map((square: Square) => {
+
+            if (viableMoves!.some(move => move.target === square.name)) {
+                return {
+                    ...square,
+                    targetedBy: {
+                        ...square.targetedBy,
+                        [squareObj.color!]: [
+                            ...square.targetedBy[squareObj.color! as keyof typeof square.targetedBy],
+                            ...viableMoves.filter(move => move.target === square.name)
+                        ]
+                    },
+                    movesCalculated: square.name === squareName || square.movesCalculated
+                };
+            } else if (square.name === squareName) {
+                return {
+                    ...square,
+                    movesCalculated: true
+                }
+            } else {
+                return square;
+            }
+        });
+        
+        setBoard(newBoard);
 
         //Adding a highlight to all possible moves
         piece.parentElement.classList.add("highlight");
@@ -230,13 +279,7 @@ export function Chess() {
                 blocked: boolean,
                 capture: boolean
             }
-            squares: TargettableSquare[]
-        }
-
-        interface TargettableSquare {
-            name: string,
-            moveable: boolean,
-            capture: boolean
+            squares: TargetingSquare[]
         }
 
         const moves = pieceObj.movement.reduce((result: TargettableSquareReducer, direction) => {
@@ -268,9 +311,9 @@ export function Chess() {
                         return;                        
                     }
 
-                    //Setting blocked = true if there is a piece on a square that isn't a capture square
+                    //Setting blocked = true if there is a piece on a square that isn't a capture square or if the piece is the same color
                     if (targetSquare!.piece !== null) {
-                        if (index !== path.length - 1 || direction.moveOnly) {
+                        if (index !== path.length - 1 || direction.moveOnly || targetSquare!.color === square.color) {
                             result.currentIteration.blocked = true;
                         } else {
                             result.currentIteration.capture = true;
@@ -282,8 +325,9 @@ export function Chess() {
             
                 const targetSquareName = board.find((square) => square.x === result.currentIteration.x && square.y === result.currentIteration.y)!.name
 
-                const currentTargettableSquare: TargettableSquare = {
-                    name: targetSquareName,
+                const currentTargettableSquare: TargetingSquare = {
+                    target: targetSquareName,
+                    source: square.name,
                     moveable: !result.currentIteration.blocked,
                     capture: result.currentIteration.capture
                 }
