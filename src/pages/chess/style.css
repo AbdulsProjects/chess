@@ -75,6 +75,14 @@ button {
     height: 20px;
 }
 
-.highlight {
+.highlight-select {
     border: 5px solid yellow;
+}
+
+.highlight-move {
+    border: 5px solid grey;
+}
+
+.highlight-capture {
+    border: 5px solid red;
 }

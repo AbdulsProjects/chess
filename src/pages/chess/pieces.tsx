@@ -29,7 +29,7 @@ const pieces: Piece[] = [
         },
         {
             moveOnly: true,
-            path: [[0,2]],
+            path: [[0,1]],
             range: 1
         },
         {

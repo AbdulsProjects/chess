@@ -215,17 +215,22 @@ export function Chess() {
         const viableMoves = CalculateMoves(board, squareName);
         if (!viableMoves) { return }
 
+        //TODO: MAKE THIS ONLY RUN IF NOT ALREADY RAN THIS TURN
         //Updating board to reflect what squares the piece can target / move to
         const newBoard: Square[] = boardRef.current.map((square: Square) => {
 
             if (viableMoves!.some(move => move.target === square.name)) {
+                const viableMove = viableMoves.find(move => move.target === square.name);
+                const targetElement = document.getElementById(square.name);
+                viableMove!.capture && targetElement!.classList.add("highlight-capture");
+                viableMove!.moveable && targetElement!.classList.add("highlight-move");
                 return {
                     ...square,
                     targetedBy: {
                         ...square.targetedBy,
                         [squareObj.color!]: [
                             ...square.targetedBy[squareObj.color! as keyof typeof square.targetedBy],
-                            ...viableMoves.filter(move => move.target === square.name)
+                            viableMove
                         ]
                     },
                     movesCalculated: square.name === squareName || square.movesCalculated
@@ -243,17 +248,21 @@ export function Chess() {
         setBoard(newBoard);
 
         //Adding a highlight to all possible moves
-        piece.parentElement.classList.add("highlight");
+        piece.parentElement.classList.add("highlight-select");
     }
 
     //Removing the highlights from all squares
     const RemoveHighlights = () => {
-        const squares = document.getElementsByClassName("highlight");
+        const squares = document.querySelectorAll('div[class*="highlight"]');
         for(let i=0; i < squares.length; i++) {
-            squares[i].classList.remove("highlight");
+            squares[i].classList.remove("highlight-select");
+            squares[i].classList.remove("highlight-move");
+            squares[i].classList.remove("highlight-capture");
         }
     }
 
+    //TODO: IMPLEMENT FIRST TURN ONLY MOVES
+    //TODO: FIX PAWNS TO NOT SHOW DIAGONAL IF NO PIECE ON SQUARE
     //Returning all possible moves
     const CalculateMoves = (board: Square[], selectedSquare: string) => {
 
@@ -316,19 +325,23 @@ export function Chess() {
                         if (index !== path.length - 1 || direction.moveOnly || targetSquare!.color === square.color) {
                             result.currentIteration.blocked = true;
                         } else {
-                            result.currentIteration.capture = true;
+                            if (!result.currentIteration.blocked) { result.currentIteration.capture = true; }
                         }
                     }
                 });
 
                 if (result.currentIteration.outOfBounds) { return result; }
             
-                const targetSquareName = board.find((square) => square.x === result.currentIteration.x && square.y === result.currentIteration.y)!.name
+                const targetSquare = board.find((square) => square.x === result.currentIteration.x && square.y === result.currentIteration.y)
 
                 const currentTargettableSquare: TargetingSquare = {
-                    target: targetSquareName,
+                    target: targetSquare!.name,
                     source: square.name,
-                    moveable: !result.currentIteration.blocked,
+                    //Can move to the square if under the following conditions:
+                    //1) The piece isn't blocked at any point in its path
+                    //2) The direction isn't capture only, or it's capture only but there's a capturable piece on the target square
+                    //3) The direction isn't only allowed on the piece's first move, or it's the piece's first move
+                    moveable: !result.currentIteration.blocked && (!direction.captureOnly || direction.captureOnly && result.currentIteration.capture) && (!direction.firstMoveOnly || square.firstTurn),
                     capture: result.currentIteration.capture
                 }
 
