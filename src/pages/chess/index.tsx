@@ -15,9 +15,9 @@ export function Chess() {
     //Setting up the state
 
     interface Square {
-        name: string,
+        id: string,
         piece: string | null,
-        color: string | null,
+        colour: string | null,
         x: number,
         y: number,
         firstTurn: boolean,
@@ -50,9 +50,9 @@ export function Chess() {
         for (let i = 8; i > 0; i--) {
             for (let j = 65; j < 73; j++) {
                 localBoard.push({
-                    name: String.fromCharCode(j) + i,
+                    id: String.fromCharCode(j) + i,
                     piece: null,
-                    color: null,
+                    colour: null,
                     x: j-64,
                     y: i,
                     firstTurn: false,
@@ -80,22 +80,76 @@ export function Chess() {
     }
 
     //Handlers for setting up a game
-    const DragPiece = (e: React.DragEvent, color: string, piece: string) => {
-        e.dataTransfer.setData("Color", color);
+    const DragPiece = (e: React.DragEvent, colour: string, piece: string) => {
+        e.dataTransfer.setData("Colour", colour);
         e.dataTransfer.setData("Piece", piece);
         
         //Grabbing the img's Id
         e.dataTransfer.setData("id", (e.target as HTMLElement).id)
     }
 
-    const AddPiece = (e: React.DragEvent) => {
+    const AddPiece = (squareId: string, pieceId: string, colour: string) => {
+        //Updating state with the new piece
+
+        //Generating the updated board
+        const newBoard: Square[] = board.map((square: Square) => {
+            if (square.id !== squareId) {
+                return square
+            } else {
+                return {
+                    ...square,
+                    colour: colour,
+                    piece: pieceId,
+                    firstTurn: true
+                }
+            }
+        })
+
+        //Updating state to the new board
+        setBoard(newBoard);
+
+        //Appending the new image
+        const element = document.getElementById(pieceId)!.cloneNode();
+        const targetSquare = document.getElementById(squareId)!
+        targetSquare.appendChild(element);
+
+        //Adding an ID and event listeners to the new element
+        const newElement = targetSquare.children[0];
+        newElement.id = targetSquare.id + " Piece";
+        newElement.addEventListener("dragstart", (e: any) => DragPiece(e, colour, pieceId))
+    }
+
+    const RemovePiece = (squareId: string) => {
+
+        //Generating the new board with the removed piece
+        const newBoard: Square[] = board.map((square: Square) => {
+            if (square.id !== squareId) {
+                return square
+            } else {
+                return {
+                    ...square,
+                    colour: null,
+                    piece: null,
+                    firstTurn: false
+                }
+            }
+        })
+
+        //Updating state to the new board
+        setBoard(newBoard);
+
+        //Removing the child img element
+        document.getElementById(squareId)!.innerHTML = '';
+    }
+
+    const DuplicatePiece = (e: React.DragEvent) => {
         //Returning out of the function if a game is in progress
         if (startGame) {return};
 
         //Stopping bubbling to allow for dropping a piece on / off the board to be differentiated
         e.stopPropagation();
         
-        const color = e.dataTransfer.getData("Color");
+        const colour = e.dataTransfer.getData("Colour");
         const piece = e.dataTransfer.getData("Piece");
 
         //Grabbing the target square, and returning out of the function if the target square is the parent square
@@ -108,12 +162,12 @@ export function Chess() {
 
         //Generating the updated board
         const newBoard: Square[] = board.map((square: Square) => {
-            if (square.name !== targetSquare.id) {
+            if (square.id !== targetSquare.id) {
                 return square
             } else {
                 return {
                     ...square,
-                    color: color,
+                    colour: colour,
                     piece: piece,
                     firstTurn: true
                 }
@@ -134,10 +188,10 @@ export function Chess() {
         //Adding an ID and event listeners to the new element
         const newElement = targetSquare.children[0];
         newElement.id = targetSquare.id + " Piece";
-        newElement.addEventListener("dragstart", (e: any) => DragPiece(e, color, piece))
+        newElement.addEventListener("dragstart", (e: any) => DragPiece(e, colour, piece))
     }
 
-    const RemovePiece = (e: React.DragEvent) => {
+    const BinPiece = (e: React.DragEvent) => {
         //Returning out of the function if a game is in progress
         if (startGame) {return};
         
@@ -149,12 +203,12 @@ export function Chess() {
 
         //Generating the new board with the removed piece
         const newBoard: Square[] = board.map((square: Square) => {
-            if (square.name !== parentElement.id) {
+            if (square.id !== parentElement.id) {
                 return square
             } else {
                 return {
                     ...square,
-                    color: null,
+                    colour: null,
                     piece: null,
                     firstTurn: false
                 }
@@ -168,6 +222,12 @@ export function Chess() {
         parentElement.innerHTML = '';
 
     }
+
+    //Handlers to set up different board types
+    const StandardGame = () => {
+
+    }
+
 
     //Handlers to start / play the game
     const StartGame = () => {
@@ -208,7 +268,7 @@ export function Chess() {
         const piece = (e.target as HTMLElement);
         if (!piece || !piece.parentElement) { return }
         const squareName = piece.parentElement.id;
-        const squareObj = board.find(square => square.name === squareName);
+        const squareObj = board.find(square => square.id === squareName);
         if (!squareObj) { return }
 
         //Calculating possible moves
@@ -219,23 +279,23 @@ export function Chess() {
         //Updating board to reflect what squares the piece can target / move to
         const newBoard: Square[] = boardRef.current.map((square: Square) => {
 
-            if (viableMoves!.some(move => move.target === square.name)) {
-                const viableMove = viableMoves.find(move => move.target === square.name);
-                const targetElement = document.getElementById(square.name);
+            if (viableMoves!.some(move => move.target === square.id)) {
+                const viableMove = viableMoves.find(move => move.target === square.id);
+                const targetElement = document.getElementById(square.id);
                 viableMove!.capture && targetElement!.classList.add("highlight-capture");
                 viableMove!.moveable && targetElement!.classList.add("highlight-move");
                 return {
                     ...square,
                     targetedBy: {
                         ...square.targetedBy,
-                        [squareObj.color!]: [
-                            ...square.targetedBy[squareObj.color! as keyof typeof square.targetedBy],
+                        [squareObj.colour!]: [
+                            ...square.targetedBy[squareObj.colour! as keyof typeof square.targetedBy],
                             viableMove
                         ]
                     },
-                    movesCalculated: square.name === squareName || square.movesCalculated
+                    movesCalculated: square.id === squareName || square.movesCalculated
                 };
-            } else if (square.name === squareName) {
+            } else if (square.id === squareName) {
                 return {
                     ...square,
                     movesCalculated: true
@@ -261,14 +321,12 @@ export function Chess() {
         }
     }
 
-    //TODO: IMPLEMENT FIRST TURN ONLY MOVES
-    //TODO: FIX PAWNS TO NOT SHOW DIAGONAL IF NO PIECE ON SQUARE
     //Returning all possible moves
     const CalculateMoves = (board: Square[], selectedSquare: string) => {
 
         //Assigning the selected square
         const square = board.find(square => {
-            return square.name === selectedSquare;
+            return square.id === selectedSquare;
         });
         if (!square) { return }
         
@@ -320,9 +378,9 @@ export function Chess() {
                         return;                        
                     }
 
-                    //Setting blocked = true if there is a piece on a square that isn't a capture square or if the piece is the same color
+                    //Setting blocked = true if there is a piece on a square that isn't a capture square or if the piece is the same colour
                     if (targetSquare!.piece !== null) {
-                        if (index !== path.length - 1 || direction.moveOnly || targetSquare!.color === square.color) {
+                        if (index !== path.length - 1 || direction.moveOnly || targetSquare!.colour === square.colour) {
                             result.currentIteration.blocked = true;
                         } else {
                             if (!result.currentIteration.blocked) { result.currentIteration.capture = true; }
@@ -335,8 +393,8 @@ export function Chess() {
                 const targetSquare = board.find((square) => square.x === result.currentIteration.x && square.y === result.currentIteration.y)
 
                 const currentTargettableSquare: TargetingSquare = {
-                    target: targetSquare!.name,
-                    source: square.name,
+                    target: targetSquare!.id,
+                    source: square.id,
                     //Can move to the square if under the following conditions:
                     //1) The piece isn't blocked at any point in its path
                     //2) The direction isn't capture only, or it's capture only but there's a capturable piece on the target square
@@ -363,7 +421,7 @@ export function Chess() {
 
 
     return (
-        <div className="main-container" onDrop={RemovePiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
+        <div className="main-container" onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
             <div className="chess-container">
                 <div className="y-labels">
                     {[...Array(8)].map((item, index) => 
@@ -377,8 +435,8 @@ export function Chess() {
                 </div>
                 <div className='chess-board'>
                     {board.map((square) => {
-                        const altRow = (square.name.charCodeAt(0) + Number(square.name[1])) % 2;
-                        return <div id={square.name} className={`square ${altRow ? "light-square": "dark-square"}`} onDrop={AddPiece} onDragOver={HoverPiece} onDragStart={DivPreventDefault}></div>
+                        const altRow = (square.id.charCodeAt(0) + Number(square.id[1])) % 2;
+                        return <div id={square.id} className={`square ${altRow ? "light-square": "dark-square"}`} onDrop={DuplicatePiece} onDragOver={HoverPiece} onDragStart={DivPreventDefault}></div>
                     }
                     )}
                 </div>
@@ -398,6 +456,7 @@ export function Chess() {
             <img src="img/black_queen.png" id="Black Queen" alt="Black Queen" onDragStart={(e) => DragPiece(e, "black", "queen")}/>
             <img src="img/black_king.png" id="Black King" alt="Black King" onDragStart={(e) => DragPiece(e, "black", "king")}/>
             <button onClick={StartGame}>Start Game</button>
+            <button onClick={StandardGame}>Standard Game</button>
         </div>
     )
 }
