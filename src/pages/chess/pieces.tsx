@@ -15,7 +15,7 @@ export interface Movement {
     range: number
 }
 
-const pieces: Piece[] = [
+const definedPieces: Piece[] = [
 {
     id: "pawn",
     name: "pawn",
@@ -209,4 +209,4 @@ const pieces: Piece[] = [
 }]
     
 
-export default pieces;
+export default definedPieces;

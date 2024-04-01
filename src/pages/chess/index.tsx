@@ -1,6 +1,6 @@
 import "./style.css"
 import React, { useEffect, useRef, useState } from 'react'
-import pieces from "./pieces"
+import definedPieces from "./pieces"
 
 //THINGS TO DO
 //Split the drop handler for on / off board
@@ -37,6 +37,12 @@ export function Chess() {
         capture: boolean
     }
 
+    interface PiecesToAdd {
+        squareId: string,
+        pieceId: string,
+        colour: string
+    }
+
     //Storing the board / game state in state
     const [board, setBoard] = useState<Square[]>([]);
     const [startGame, setStartGame] = useState(false);
@@ -68,18 +74,19 @@ export function Chess() {
     }, [])
 
     //General Functions
-    const AddPiece = (squareId: string, pieceId: string, colour: string) => {
+    const AddPiece = (pieces: PiecesToAdd[]) => {
         //Updating state with the new piece
 
         //Generating the updated board
         const newBoard: Square[] = board.map((square: Square) => {
-            if (square.id !== squareId) {
+            const piece = pieces.find((piece) => piece.squareId === square.id);
+            if (piece === undefined) {
                 return square
             } else {
                 return {
                     ...square,
-                    colour: colour,
-                    piece: pieceId,
+                    colour: piece.colour,
+                    piece: piece.pieceId,
                     firstTurn: true
                 }
             }
@@ -88,18 +95,20 @@ export function Chess() {
         //Updating state to the new board
         setBoard(newBoard);
 
-        //Removing any current images
-        const targetSquare = document.getElementById(squareId)!
-        if (targetSquare.hasChildNodes()) {targetSquare.removeChild((targetSquare.firstChild as Node))};
+        pieces.map((piece) => {
+            //Removing any current images
+            const targetSquare = document.getElementById(piece.squareId)!
+            if (targetSquare.hasChildNodes()) {targetSquare.removeChild((targetSquare.firstChild as Node))};
 
-        //Appending the new image
-        const element = document.getElementById(colour + ' ' + pieceId)!.cloneNode();
-        targetSquare.appendChild(element);
+            //Appending the new image
+            const element = document.getElementById(piece.colour + ' ' + piece.pieceId)!.cloneNode();
+            targetSquare.appendChild(element);
 
-        //Adding an ID and event listeners to the new element
-        const newElement = targetSquare.children[0];
-        newElement.id = targetSquare.id + " Piece";
-        newElement.addEventListener("dragstart", (e: any) => DragPiece(e, colour, pieceId))
+            //Adding an ID and event listeners to the new element
+            const newElement = targetSquare.children[0];
+            newElement.id = targetSquare.id + " Piece";
+            newElement.addEventListener("dragstart", (e: any) => DragPiece(e, piece.colour, piece.pieceId))
+        })
     }
 
     const RemovePiece = (squareId: string) => {
@@ -172,7 +181,7 @@ export function Chess() {
             var targetSquare = (e.target as HTMLElement);
         }
 
-        AddPiece(targetSquare.id, piece, colour);
+        AddPiece([{squareId: targetSquare.id, pieceId: piece, colour: colour}]);
 
     }
 
@@ -194,41 +203,41 @@ export function Chess() {
     const StandardGame = () => {
         
         ClearBoard();
+        AddPiece([
+            {squareId: 'A8', pieceId: 'rook', colour: 'black'},
+            {squareId: 'B8', pieceId: 'knight', colour: 'black'},
+            {squareId: 'C8', pieceId: 'bishop', colour: 'black'},
+            {squareId: 'D8', pieceId: 'king', colour: 'black'},
+            {squareId: 'E8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'F8', pieceId: 'bishop', colour: 'black'},
+            {squareId: 'G8', pieceId: 'knight', colour: 'black'},
+            {squareId: 'H8', pieceId: 'rook', colour: 'black'},
+            {squareId: 'A7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'B7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'C7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'D7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'E7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'F7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'G7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'H7', pieceId: 'pawn', colour: 'black'},
 
-        AddPiece('A8', 'rook', 'black');
-        AddPiece('H8', 'rook', 'black');
-        AddPiece('B8', 'knight', 'black');
-        AddPiece('G8', 'knight', 'black');
-        AddPiece('C8', 'bishop', 'black');
-        AddPiece('F8', 'bishop', 'black');
-        AddPiece('D8', 'king', 'black');
-        AddPiece('E8', 'queen', 'black');
-        AddPiece('A7', 'pawn', 'black');
-        AddPiece('B7', 'pawn', 'black');
-        AddPiece('C7', 'pawn', 'black');
-        AddPiece('D7', 'pawn', 'black');
-        AddPiece('E7', 'pawn', 'black');
-        AddPiece('F7', 'pawn', 'black');
-        AddPiece('G7', 'pawn', 'black');
-        AddPiece('H7', 'pawn', 'black');
-
-        AddPiece('A1', 'rook', 'white');
-        AddPiece('H1', 'rook', 'white');
-        AddPiece('B1', 'knight', 'white');
-        AddPiece('G1', 'knight', 'white');
-        AddPiece('C1', 'bishop', 'white');
-        AddPiece('F1', 'bishop', 'white');
-        AddPiece('D1', 'king', 'white');
-        AddPiece('E1', 'queen', 'white');
-        AddPiece('A2', 'pawn', 'white');
-        AddPiece('B2', 'pawn', 'white');
-        AddPiece('C2', 'pawn', 'white');
-        AddPiece('D2', 'pawn', 'white');
-        AddPiece('E2', 'pawn', 'white');
-        AddPiece('F2', 'pawn', 'white');
-        AddPiece('G2', 'pawn', 'white');
-        AddPiece('H2', 'pawn', 'white');
-
+            {squareId: 'A1', pieceId: 'rook', colour: 'white'},
+            {squareId: 'B1', pieceId: 'knight', colour: 'white'},
+            {squareId: 'C1', pieceId: 'bishop', colour: 'white'},
+            {squareId: 'D1', pieceId: 'king', colour: 'white'},
+            {squareId: 'E1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'F1', pieceId: 'bishop', colour: 'white'},
+            {squareId: 'G1', pieceId: 'knight', colour: 'white'},
+            {squareId: 'H1', pieceId: 'rook', colour: 'white'},
+            {squareId: 'A2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'B2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'C2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'D2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'E2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'F2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'G2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'H2', pieceId: 'pawn', colour: 'white'},
+        ])
     }
 
 
@@ -237,7 +246,7 @@ export function Chess() {
         //Updating the square drop handlers
         const squares = document.getElementsByClassName("square");
         for(let i=0; i < squares.length; i++) {
-            squares[i].addEventListener("drop", () => MovePiece());
+            squares[i].addEventListener("drop", (e: Event) => MovePiece(e as unknown as React.DragEvent));
         }
 
         //Updating the handlers of all pieces
@@ -252,9 +261,13 @@ export function Chess() {
 
     }
 
-    const MovePiece = () => {
+    const MovePiece = (e: React.DragEvent) => {
         //Steps
         //1) 
+        if (!startGame) {
+            DuplicatePiece(e);
+            return
+        };
     }
 
     const SelectPiece = (e: Event) => {
@@ -335,7 +348,7 @@ export function Chess() {
         
 
         //Returning the corresponding piece object
-        const pieceObj = pieces.find(piece => {
+        const pieceObj = definedPieces.find(piece => {
             return piece.id === square.piece;
         });
         if (!pieceObj) { return }
@@ -368,8 +381,8 @@ export function Chess() {
                 //Following the specified path. This allows for pieces that can only capture at the end of a specified path to be created. forEach is used instead of reduce to allow for short circuits
                 direction.path.forEach((step, index, path) => {
                     //Calculating the next square
-                    result.currentIteration.x += step[0];
-                    result.currentIteration.y += step[1];
+                    result.currentIteration.x += step[0] * (square.colour === 'black' ? -1 : 1);
+                    result.currentIteration.y += step[1] * (square.colour === 'black' ? -1 : 1);
 
                     //Retrieving the square from state
                     const targetSquare = board.find((square) => {
@@ -439,7 +452,7 @@ export function Chess() {
                 <div className='chess-board'>
                     {board.map((square) => {
                         const altRow = (square.id.charCodeAt(0) + Number(square.id[1])) % 2;
-                        return <div id={square.id} className={`square ${altRow ? "light-square": "dark-square"}`} onDrop={DuplicatePiece} onDragOver={HoverPiece} onDragStart={DivPreventDefault}></div>
+                        return <div id={square.id} className={`square ${altRow ? "light-square": "dark-square"}`} onDrop={MovePiece} onDragOver={HoverPiece} onDragStart={DivPreventDefault}></div>
                     }
                     )}
                 </div>
