@@ -9,6 +9,9 @@ import definedPieces from "./pieces"
 //Potentially change the pieces model to allow for all pieces along the path to be captured
 //See if you can tidy up the function that finds the targettable squares, and change the knight object to move clockwise
 //Update the squares in state after the targettable squares are found in state for calculating check / highlighting the correct squares
+//Check if boardRef.current needs to replace all references to board
+//Drag a piece ontop of itself during start game state and check for an error
+//Calculate moves seems to break on squares that have already been moved to
 
 export function Chess() {
 
@@ -107,7 +110,11 @@ export function Chess() {
             //Adding an ID and event listeners to the new element
             const newElement = targetSquare.children[0];
             newElement.id = targetSquare.id + " Piece";
-            newElement.addEventListener("dragstart", (e: any) => DragPiece(e, piece.colour, piece.pieceId))
+            newElement.addEventListener("dragstart", (e: any) => DragPiece(e, piece.colour, piece.pieceId));
+            if (startGame) {
+                newElement.addEventListener("click", (e) => SelectPiece(e));
+                newElement.addEventListener("dragstart", (e) => SelectPiece(e));
+            }
         })
     }
 
@@ -159,28 +166,37 @@ export function Chess() {
         e.dataTransfer.setData("Colour", colour);
         e.dataTransfer.setData("Piece", piece);
         
-        //Grabbing the img's Id
-        e.dataTransfer.setData("id", (e.target as HTMLElement).id)
+        //Grabbing the Ids
+        e.dataTransfer.setData("pieceId", (e.target as HTMLElement).id)
+        e.dataTransfer.setData("squareId", (e.target as HTMLElement).parentElement!.id)
     }
 
-    const DuplicatePiece = (e: React.DragEvent) => {
-        //Returning out of the function if a game is in progress
-        if (startGame) {return};
-
-        //Stopping bubbling to allow for dropping a piece on / off the board to be differentiated
-        e.stopPropagation();
+    const MovePiece = (e: React.DragEvent) => {
         
         const colour = e.dataTransfer.getData("Colour");
         const piece = e.dataTransfer.getData("Piece");
+        const sourceSquareId = e.dataTransfer.getData('squareId');
+
+        //Returning out of the function if a game is in progress
+        if (startGame) {
+            const targetSquare = board.find(square => square.id === (e.target as HTMLElement).id)!;
+            const targetedBy = targetSquare.targetedBy['black'];
+            const moveable = targetedBy.find(targettingSquares => targettingSquares.source === sourceSquareId)?.moveable;
+            if (!moveable) {return}
+        };
+
+        //Stopping bubbling to allow for dropping a piece on / off the board to be differentiated
+        e.stopPropagation();
 
         //Grabbing the target square, and returning out of the function if the target square is the parent square
         if ((e.target as HTMLElement).nodeName ==='IMG') {
-            if (document.getElementById(e.dataTransfer.getData("id"))!.parentNode === (e.target as HTMLElement).parentNode) { return }
+            if (document.getElementById(e.dataTransfer.getData("pieceId"))!.parentNode === (e.target as HTMLElement).parentNode) { return }
             var targetSquare = (e.target as HTMLElement).parentElement!
         } else {
             var targetSquare = (e.target as HTMLElement);
         }
 
+        if(startGame) {RemovePiece(sourceSquareId)}
         AddPiece([{squareId: targetSquare.id, pieceId: piece, colour: colour}]);
 
     }
@@ -190,7 +206,7 @@ export function Chess() {
         if (startGame) {return};
         
         //Grabbing the parent of the dragged element
-        const parentElement = document.getElementById(e.dataTransfer.getData("id"))!.parentElement;
+        const parentElement = document.getElementById(e.dataTransfer.getData("squareId"));
         
         //Returning out of the function if the piece is not on the board
         if (!parentElement?.classList.contains("square")) { return }
@@ -243,11 +259,6 @@ export function Chess() {
 
     //Functions  to start / play the game
     const StartGame = () => {
-        //Updating the square drop handlers
-        const squares = document.getElementsByClassName("square");
-        for(let i=0; i < squares.length; i++) {
-            squares[i].addEventListener("drop", (e: Event) => MovePiece(e as unknown as React.DragEvent));
-        }
 
         //Updating the handlers of all pieces
         const pieces = document!.querySelectorAll('[id$=Piece]');//getElementsByClassName("piece");
@@ -259,15 +270,6 @@ export function Chess() {
         //Updating state
         setStartGame(true);
 
-    }
-
-    const MovePiece = (e: React.DragEvent) => {
-        //Steps
-        //1) 
-        if (!startGame) {
-            DuplicatePiece(e);
-            return
-        };
     }
 
     const SelectPiece = (e: Event) => {
@@ -284,11 +286,11 @@ export function Chess() {
         const piece = (e.target as HTMLElement);
         if (!piece || !piece.parentElement) { return }
         const squareName = piece.parentElement.id;
-        const squareObj = board.find(square => square.id === squareName);
+        const squareObj = boardRef.current.find(square => square.id === squareName);
         if (!squareObj) { return }
 
         //Calculating possible moves
-        const viableMoves = CalculateMoves(board, squareName);
+        const viableMoves = CalculateMoves(boardRef.current, squareName);
         if (!viableMoves) { return }
 
         //TODO: MAKE THIS ONLY RUN IF NOT ALREADY RAN THIS TURN
@@ -345,7 +347,6 @@ export function Chess() {
             return square.id === selectedSquare;
         });
         if (!square) { return }
-        
 
         //Returning the corresponding piece object
         const pieceObj = definedPieces.find(piece => {
@@ -452,7 +453,7 @@ export function Chess() {
                 <div className='chess-board'>
                     {board.map((square) => {
                         const altRow = (square.id.charCodeAt(0) + Number(square.id[1])) % 2;
-                        return <div id={square.id} className={`square ${altRow ? "light-square": "dark-square"}`} onDrop={MovePiece} onDragOver={HoverPiece} onDragStart={DivPreventDefault}></div>
+                        return <div id={square.id} className={`square ${altRow ? "light-square": "dark-square"}`} onDrop={(e) => MovePiece(e)} onDragOver={HoverPiece} onDragStart={DivPreventDefault}></div>
                     }
                     )}
                 </div>
