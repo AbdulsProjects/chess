@@ -13,6 +13,8 @@ import definedPieces from "./pieces"
 //Drag a piece ontop of itself during start game state and check for an error
 //Calculate moves seems to break on squares that have already been moved to
 
+//Turn the add / remove functions into pure functions that just return a new board, then set the board outside of the function
+
 export function Chess() {
 
     //Setting up the state
@@ -77,11 +79,52 @@ export function Chess() {
     }, [])
 
     //General Functions
-    const AddPiece = (pieces: PiecesToAdd[]) => {
-        //Updating state with the new piece
 
+    //This is used to update the HTML whenever the board in state is updated
+    const setBoardAndHtml = (newBoard: Square[]) => {
+        
+        //Determining what squares have changed in the state
+        const differentSquares: Square[] = newBoard.filter((square) => {
+            const prevSquare: Square = boardRef.current.find(prevSquare => prevSquare.id === square.id)!;
+            return square.piece !== prevSquare.piece || square.colour !== prevSquare.colour;
+        })
+
+        //Updating the HTML of the changed squares
+        differentSquares.map((square: Square) => {
+            
+            const squareElement = document.getElementById(square.id)!;
+            
+            //Handling squares where a piece was removed
+            if (!square.piece) {
+                squareElement!.innerHTML = '';
+                return
+            }
+
+            //Handling squares where a piece was added
+            //Generating the new img element
+            let pieceImg = document.createElement('img');
+            pieceImg.id = square.id + ' Piece';
+            pieceImg.alt = square.colour + ' ' + square.piece
+            pieceImg.src = 'img/' + square.colour + '_' + square.piece + '.png'
+            pieceImg.addEventListener("dragstart", (e: any) => DragPiece(e, square.colour!, square.piece!));
+            if (startGame) {
+                pieceImg.addEventListener("click", (e) => SelectPiece(e));
+                pieceImg.addEventListener("dragstart", (e) => SelectPiece(e));
+            }
+
+            //Appending the new img element to the square div
+            squareElement.appendChild(pieceImg);
+
+            //Updating the board in state
+            setBoard(newBoard);
+       })
+    }
+
+    const AddPiece = (prevBoard: Square[], pieces: PiecesToAdd[]): Square[] => {
+        //Updating state with the new piece
+        
         //Generating the updated board
-        const newBoard: Square[] = board.map((square: Square) => {
+        const newBoard: Square[] = prevBoard.map((square: Square) => {
             const piece = pieces.find((piece) => piece.squareId === square.id);
             if (piece === undefined) {
                 return square
@@ -90,41 +133,23 @@ export function Chess() {
                     ...square,
                     colour: piece.colour,
                     piece: piece.pieceId,
-                    firstTurn: true
+                    firstTurn: !startGame
                 }
             }
         })
 
-        //Updating state to the new board
-        setBoard(newBoard);
-
-        pieces.map((piece) => {
-            //Removing any current images
-            const targetSquare = document.getElementById(piece.squareId)!
-            if (targetSquare.hasChildNodes()) {targetSquare.removeChild((targetSquare.firstChild as Node))};
-
-            //Appending the new image
-            const element = document.getElementById(piece.colour + ' ' + piece.pieceId)!.cloneNode();
-            targetSquare.appendChild(element);
-
-            //Adding an ID and event listeners to the new element
-            const newElement = targetSquare.children[0];
-            newElement.id = targetSquare.id + " Piece";
-            newElement.addEventListener("dragstart", (e: any) => DragPiece(e, piece.colour, piece.pieceId));
-            if (startGame) {
-                newElement.addEventListener("click", (e) => SelectPiece(e));
-                newElement.addEventListener("dragstart", (e) => SelectPiece(e));
-            }
-        })
+        return newBoard
     }
 
-    const RemovePiece = (squareId: string) => {
+    const RemovePiece = (prevBoard: Square[], squareId: string): Square[] => {
 
         //Generating the new board with the removed piece
-        const newBoard: Square[] = board.map((square: Square) => {
+        const newBoard: Square[] = prevBoard.map((square: Square) => {
             if (square.id !== squareId) {
+                // console.log("default", square.id)
                 return square
             } else {
+                // console.log("change", square.id)
                 return {
                     ...square,
                     colour: null,
@@ -134,19 +159,19 @@ export function Chess() {
             }
         })
 
-        //Updating state to the new board
-        setBoard(newBoard);
-
-        //Removing the child img element
-        document.getElementById(squareId)!.innerHTML = '';
+        return newBoard;
     }
 
-    const ClearBoard = () => {
+    const ClearBoard = (): Square[] => {
 
+        let newBoard: Square[] = [...boardRef.current];
         board.map((square: Square) => {
-            RemovePiece(square.id)
+            newBoard = RemovePiece(newBoard, square.id);
         })
-
+        
+        setBoardAndHtml(newBoard);
+        
+        return(newBoard);
     }
 
     //Event Handlers
@@ -196,9 +221,14 @@ export function Chess() {
             var targetSquare = (e.target as HTMLElement);
         }
 
-        if(startGame) {RemovePiece(sourceSquareId)}
-        AddPiece([{squareId: targetSquare.id, pieceId: piece, colour: colour}]);
-
+        if(startGame) {
+            let newBoard = RemovePiece(boardRef.current, sourceSquareId);
+            newBoard = AddPiece(newBoard, [{squareId: targetSquare.id, pieceId: piece, colour: colour}]);
+            setBoardAndHtml(newBoard);    
+            RemoveHighlights();
+        } else {
+            setBoardAndHtml(AddPiece(boardRef.current, [{squareId: targetSquare.id, pieceId: piece, colour: colour}]));
+        }
     }
 
     const BinPiece = (e: React.DragEvent) => {
@@ -211,15 +241,15 @@ export function Chess() {
         //Returning out of the function if the piece is not on the board
         if (!parentElement?.classList.contains("square")) { return }
 
-        RemovePiece(parentElement.id);
+        setBoardAndHtml(RemovePiece(boardRef.current, parentElement.id));
 
     }
 
     //Functions to set up different board types
     const StandardGame = () => {
         
-        ClearBoard();
-        AddPiece([
+        const newBoard: Square[] = ClearBoard();
+        setBoardAndHtml(AddPiece(newBoard, [
             {squareId: 'A8', pieceId: 'rook', colour: 'black'},
             {squareId: 'B8', pieceId: 'knight', colour: 'black'},
             {squareId: 'C8', pieceId: 'bishop', colour: 'black'},
@@ -253,7 +283,7 @@ export function Chess() {
             {squareId: 'F2', pieceId: 'pawn', colour: 'white'},
             {squareId: 'G2', pieceId: 'pawn', colour: 'white'},
             {squareId: 'H2', pieceId: 'pawn', colour: 'white'},
-        ])
+        ]))
     }
 
 
@@ -458,18 +488,18 @@ export function Chess() {
                     )}
                 </div>
             </div>
-            <img src="img/white_pawn.png" id="white pawn" alt="White Pawn" onDragStart={(e) => DragPiece(e, "white", "pawn")}/>
-            <img src="img/white_rook.png" id="white rook" alt="White Rook" onDragStart={(e) => DragPiece(e, "white", "rook")}/>
-            <img src="img/white_knight.png" id="white knight" alt="White Knight" onDragStart={(e) => DragPiece(e, "white", "knight")}/>
-            <img src="img/white_bishop.png" id="white bishop" alt="White Bishop" onDragStart={(e) => DragPiece(e, "white", "bishop")}/>
-            <img src="img/white_queen.png" id="white queen" alt="White Queen" onDragStart={(e) => DragPiece(e, "white", "queen")}/>
-            <img src="img/white_king.png" id="white king" alt="White King" onDragStart={(e) => DragPiece(e, "white", "king")}/>
-            <img src="img/black_pawn.png" id="black pawn" alt="Black Pawn" onDragStart={(e) => DragPiece(e, "black", "pawn")}/>
-            <img src="img/black_rook.png" id="black rook" alt="Black Rook" onDragStart={(e) => DragPiece(e, "black", "rook")}/>
-            <img src="img/black_knight.png" id="black knight" alt="Black Knight" onDragStart={(e) => DragPiece(e, "black", "knight")}/>
-            <img src="img/black_bishop.png" id="black bishop" alt="Black Bishop" onDragStart={(e) => DragPiece(e, "black", "bishop")}/>
-            <img src="img/black_queen.png" id="black queen" alt="Black Queen" onDragStart={(e) => DragPiece(e, "black", "queen")}/>
-            <img src="img/black_king.png" id="black king" alt="Black King" onDragStart={(e) => DragPiece(e, "black", "king")}/>
+            <img src="img/white_pawn.png" id="white pawn" alt="white pawn" onDragStart={(e) => DragPiece(e, "white", "pawn")}/>
+            <img src="img/white_rook.png" id="white rook" alt="white rook" onDragStart={(e) => DragPiece(e, "white", "rook")}/>
+            <img src="img/white_knight.png" id="white knight" alt="white knight" onDragStart={(e) => DragPiece(e, "white", "knight")}/>
+            <img src="img/white_bishop.png" id="white bishop" alt="white bishop" onDragStart={(e) => DragPiece(e, "white", "bishop")}/>
+            <img src="img/white_queen.png" id="white queen" alt="white queen" onDragStart={(e) => DragPiece(e, "white", "queen")}/>
+            <img src="img/white_king.png" id="white king" alt="white king" onDragStart={(e) => DragPiece(e, "white", "king")}/>
+            <img src="img/black_pawn.png" id="black pawn" alt="black pawn" onDragStart={(e) => DragPiece(e, "black", "pawn")}/>
+            <img src="img/black_rook.png" id="black rook" alt="black rook" onDragStart={(e) => DragPiece(e, "black", "rook")}/>
+            <img src="img/black_knight.png" id="black knight" alt="black knight" onDragStart={(e) => DragPiece(e, "black", "knight")}/>
+            <img src="img/black_bishop.png" id="black bishop" alt="black bishop" onDragStart={(e) => DragPiece(e, "black", "bishop")}/>
+            <img src="img/black_queen.png" id="black queen" alt="black queen" onDragStart={(e) => DragPiece(e, "black", "queen")}/>
+            <img src="img/black_king.png" id="black king" alt="black king" onDragStart={(e) => DragPiece(e, "black", "king")}/>
             <button onClick={StartGame}>Start Game</button>
             <button onClick={StandardGame}>Standard Game</button>
         </div>
