@@ -11,9 +11,10 @@ import definedPieces from "./pieces"
 //Update the squares in state after the targettable squares are found in state for calculating check / highlighting the correct squares
 //Check if boardRef.current needs to replace all references to board
 //Drag a piece ontop of itself during start game state and check for an error
-//Calculate moves seems to break on squares that have already been moved to
+//Figure out why the movement just randomly breaks sometimes
 
-//Turn the add / remove functions into pure functions that just return a new board, then set the board outside of the function
+//!!!!Change the system to just check all viable moves at the start of each turn, remove calculated this turn. Ensure all targetted by's are reset to null before calculating
+//Add targeting to square, so each square includes what it targets and what it is targetted by
 
 export function Chess() {
 
@@ -48,12 +49,22 @@ export function Chess() {
         colour: string
     }
 
+    interface GameState {
+        inProgress: boolean,
+        currentPlayer: 'white' | 'black'
+    }
+
     //Storing the board / game state in state
     const [board, setBoard] = useState<Square[]>([]);
-    const [startGame, setStartGame] = useState(false);
+    const [gameState, setGameState] = useState<GameState>({
+        inProgress: false,
+        currentPlayer: 'white'
+    })
     const boardRef = useRef<Square[]>([]);
+    const gameStateRef = useRef<GameState>(gameState);
 
     boardRef.current = board;
+    gameStateRef.current = gameState;
 
     useEffect(() => {
         //Setting up the board
@@ -94,11 +105,9 @@ export function Chess() {
             
             const squareElement = document.getElementById(square.id)!;
             
-            //Handling squares where a piece was removed
-            if (!square.piece) {
-                squareElement!.innerHTML = '';
-                return
-            }
+            squareElement!.innerHTML = '';
+            //Exitting if a piece was removed instead of replaced
+            if (!square.piece) {return}
 
             //Handling squares where a piece was added
             //Generating the new img element
@@ -107,7 +116,7 @@ export function Chess() {
             pieceImg.alt = square.colour + ' ' + square.piece
             pieceImg.src = 'img/' + square.colour + '_' + square.piece + '.png'
             pieceImg.addEventListener("dragstart", (e: any) => DragPiece(e, square.colour!, square.piece!));
-            if (startGame) {
+            if (gameState.inProgress) {
                 pieceImg.addEventListener("click", (e) => SelectPiece(e));
                 pieceImg.addEventListener("dragstart", (e) => SelectPiece(e));
             }
@@ -115,9 +124,10 @@ export function Chess() {
             //Appending the new img element to the square div
             squareElement.appendChild(pieceImg);
 
-            //Updating the board in state
-            setBoard(newBoard);
        })
+
+        //Updating the board in state
+        setBoard(newBoard);
     }
 
     const AddPiece = (prevBoard: Square[], pieces: PiecesToAdd[]): Square[] => {
@@ -127,13 +137,17 @@ export function Chess() {
         const newBoard: Square[] = prevBoard.map((square: Square) => {
             const piece = pieces.find((piece) => piece.squareId === square.id);
             if (piece === undefined) {
-                return square
+                return {
+                    ...square,
+                    movesCalculated: false
+                }
             } else {
                 return {
                     ...square,
                     colour: piece.colour,
                     piece: piece.pieceId,
-                    firstTurn: !startGame
+                    firstTurn: !gameState.inProgress,
+                    movesCalculated: false
                 }
             }
         })
@@ -146,10 +160,8 @@ export function Chess() {
         //Generating the new board with the removed piece
         const newBoard: Square[] = prevBoard.map((square: Square) => {
             if (square.id !== squareId) {
-                // console.log("default", square.id)
                 return square
             } else {
-                // console.log("change", square.id)
                 return {
                     ...square,
                     colour: null,
@@ -168,8 +180,6 @@ export function Chess() {
         board.map((square: Square) => {
             newBoard = RemovePiece(newBoard, square.id);
         })
-        
-        setBoardAndHtml(newBoard);
         
         return(newBoard);
     }
@@ -197,43 +207,50 @@ export function Chess() {
     }
 
     const MovePiece = (e: React.DragEvent) => {
-        
-        const colour = e.dataTransfer.getData("Colour");
-        const piece = e.dataTransfer.getData("Piece");
-        const sourceSquareId = e.dataTransfer.getData('squareId');
-
-        //Returning out of the function if a game is in progress
-        if (startGame) {
-            const targetSquare = board.find(square => square.id === (e.target as HTMLElement).id)!;
-            const targetedBy = targetSquare.targetedBy['black'];
-            const moveable = targetedBy.find(targettingSquares => targettingSquares.source === sourceSquareId)?.moveable;
-            if (!moveable) {return}
-        };
 
         //Stopping bubbling to allow for dropping a piece on / off the board to be differentiated
         e.stopPropagation();
 
+        const colour = e.dataTransfer.getData("Colour");
+        const piece = e.dataTransfer.getData("Piece");
+        const sourceSquareId = e.dataTransfer.getData('squareId');
+
         //Grabbing the target square, and returning out of the function if the target square is the parent square
         if ((e.target as HTMLElement).nodeName ==='IMG') {
             if (document.getElementById(e.dataTransfer.getData("pieceId"))!.parentNode === (e.target as HTMLElement).parentNode) { return }
-            var targetSquare = (e.target as HTMLElement).parentElement!
+            var targetSquare = board.find(square => square.id === (e.target as HTMLElement).parentElement!.id)!;
         } else {
-            var targetSquare = (e.target as HTMLElement);
+            var targetSquare = board.find(square => square.id === (e.target as HTMLElement).id)!;
         }
 
-        if(startGame) {
+        //Moving the piece if a game is in progress, duplicating the piece if not
+        if(gameState.inProgress) {
+            //Returning if trying to grab the other player's piece
+            if (colour !== gameState.currentPlayer) {return}
+
+            //Returning if trying to move to an invalid square
+            const targetedBy = targetSquare.targetedBy[colour as keyof TargetedBy];
+            const moveable = targetedBy.find(targettingSquares => targettingSquares.source === sourceSquareId)?.moveable;
+            if (!moveable) {return}
+
+            //Moving the piece
             let newBoard = RemovePiece(boardRef.current, sourceSquareId);
             newBoard = AddPiece(newBoard, [{squareId: targetSquare.id, pieceId: piece, colour: colour}]);
             setBoardAndHtml(newBoard);    
             RemoveHighlights();
+            setGameState(prevState => ({
+                ...prevState,
+                currentPlayer: prevState.currentPlayer === 'white' ? 'black' : 'white'
+            }))
         } else {
+            //Adding the piece
             setBoardAndHtml(AddPiece(boardRef.current, [{squareId: targetSquare.id, pieceId: piece, colour: colour}]));
         }
     }
 
     const BinPiece = (e: React.DragEvent) => {
         //Returning out of the function if a game is in progress
-        if (startGame) {return};
+        if (gameState.inProgress) {return};
         
         //Grabbing the parent of the dragged element
         const parentElement = document.getElementById(e.dataTransfer.getData("squareId"));
@@ -241,7 +258,9 @@ export function Chess() {
         //Returning out of the function if the piece is not on the board
         if (!parentElement?.classList.contains("square")) { return }
 
-        setBoardAndHtml(RemovePiece(boardRef.current, parentElement.id));
+        const newBoard = RemovePiece(boardRef.current, parentElement.id);
+        
+        setBoardAndHtml(newBoard);
 
     }
 
@@ -298,16 +317,14 @@ export function Chess() {
         }
 
         //Updating state
-        setStartGame(true);
+        setGameState(prevState => ({
+            ...prevState,
+            inProgress: true
+        }));
 
     }
 
     const SelectPiece = (e: Event) => {
-        //Steps
-        //1) Identify the square targetted
-        //2) Identify which squares can be moved to (use a reusable function call)
-        //3) CURRENT STEP Highlight tiles returned by the CalculateMoves function
-        //4) Update state to reflect targettable / moveable squares / calculated this turn
 
         //Removing highlights from currently highlighted piece
         RemoveHighlights();
@@ -319,44 +336,26 @@ export function Chess() {
         const squareObj = boardRef.current.find(square => square.id === squareName);
         if (!squareObj) { return }
 
+        //Returning if trying to grab the other player's piece
+        if (squareObj.colour !== gameStateRef.current.currentPlayer) {return}
+
         //Calculating possible moves
-        const viableMoves = CalculateMoves(boardRef.current, squareName);
-        if (!viableMoves) { return }
+        const calculatedMovesResponse = CalculateMoves(boardRef.current, squareName);
 
-        //TODO: MAKE THIS ONLY RUN IF NOT ALREADY RAN THIS TURN
-        //Updating board to reflect what squares the piece can target / move to
-        const newBoard: Square[] = boardRef.current.map((square: Square) => {
-
-            if (viableMoves!.some(move => move.target === square.id)) {
-                const viableMove = viableMoves.find(move => move.target === square.id);
-                const targetElement = document.getElementById(square.id);
-                viableMove!.capture && targetElement!.classList.add("highlight-capture");
-                viableMove!.moveable && targetElement!.classList.add("highlight-move");
-                return {
-                    ...square,
-                    targetedBy: {
-                        ...square.targetedBy,
-                        [squareObj.colour!]: [
-                            ...square.targetedBy[squareObj.colour! as keyof typeof square.targetedBy],
-                            viableMove
-                        ]
-                    },
-                    movesCalculated: square.id === squareName || square.movesCalculated
-                };
-            } else if (square.id === squareName) {
-                return {
-                    ...square,
-                    movesCalculated: true
-                }
-            } else {
-                return square;
-            }
-        });
-        
-        setBoard(newBoard);
+        setBoard(calculatedMovesResponse.newBoard);
 
         //Adding a highlight to all possible moves
         piece.parentElement.classList.add("highlight-select");
+
+        if (!calculatedMovesResponse.moves) { return }
+
+        //Updating the HTML to indicate targettable squares
+        calculatedMovesResponse.moves.map((move: TargetingSquare) => {
+                const targetElement = document.getElementById(move.target);
+                move!.capture && targetElement!.classList.add("highlight-capture");
+                move!.moveable && targetElement!.classList.add("highlight-move");
+        });
+
     }
 
     //Removing the highlights from all squares
@@ -376,13 +375,38 @@ export function Chess() {
         const square = board.find(square => {
             return square.id === selectedSquare;
         });
-        if (!square) { return }
+
+        //Exitting if no square found
+        if (!square) { return {
+            newBoard: boardRef.current,
+            moves: null 
+        }}
+
+        //Grabbing and returning the moves if they have already been calculated this turn
+        if (square.movesCalculated) {
+            const moves = (boardRef.current.filter((currSquare) => {
+                return currSquare.targetedBy[square.colour as keyof typeof currSquare.targetedBy].some((move) => move.source === square.id)
+            })
+            .reduce((moves: TargetingSquare[], targetedSquare) => {
+                const currMoves = targetedSquare.targetedBy[square.colour as keyof typeof targetedSquare.targetedBy].filter((move) => move.source === square.id)
+                return moves.concat(currMoves)
+            }, []));
+
+            return{
+                newBoard: boardRef.current,
+                moves: moves
+            }
+        }
 
         //Returning the corresponding piece object
         const pieceObj = definedPieces.find(piece => {
             return piece.id === square.piece;
         });
-        if (!pieceObj) { return }
+
+        if (!pieceObj) { return {
+            newBoard: boardRef.current,
+            moves: null
+        }};
 
         //Interfaces used in the reduce call
         interface TargettableSquareReducer {
@@ -406,6 +430,8 @@ export function Chess() {
                 blocked: false,
                 capture: false
             };
+
+            if (direction.firstMoveOnly && !square.firstTurn) { return result }
 
             //Repeating the movement for repeatable patterns
             for (let i = 0; i < direction.range; i++) {
@@ -463,7 +489,45 @@ export function Chess() {
 
         }, { currentIteration: { x: 0, y: 0, outOfBounds: false, blocked: false, capture: false }, squares: [] });
 
-        return moves.squares;
+        if (!moves.squares) { return {
+            newBoard: boardRef.current,
+            moves: null
+        }}
+
+        //Updating board to reflect the moveable squares
+        const newBoard: Square[] = boardRef.current.map((currSquare: Square) => {
+
+            if (moves.squares!.some(move => move.target === currSquare.id)) {
+                const viableMove = moves.squares.find(move => move.target === currSquare.id);
+                return {
+                    ...currSquare,
+                    targetedBy: {
+                        ...currSquare.targetedBy,
+                        [square.colour!]: [
+                            ...currSquare.targetedBy[square.colour! as keyof typeof currSquare.targetedBy],
+                            viableMove
+                        ]
+                    },
+                    movesCalculated: currSquare.id === square.id || currSquare.movesCalculated
+                };
+            } else if (currSquare.id === square.id) {
+                return {
+                    ...currSquare,
+                    movesCalculated: true
+                }
+            } else {
+                return {
+                    ...currSquare,
+                    movesCalculated: currSquare.id === square.id || currSquare.movesCalculated
+                }
+            }
+        });
+
+        // return moves.squares;
+        return {
+            newBoard: newBoard,
+            moves: moves.squares
+        };
     };
 
 
