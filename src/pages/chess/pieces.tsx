@@ -24,8 +24,8 @@ const definedPieces: Piece[] = [
         {
             moveOnly: true,
             firstMoveOnly: true,
-            path: [[0,2]],
-            range: 1
+            path: [[0,1]],
+            range: 2
         },
         {
             moveOnly: true,

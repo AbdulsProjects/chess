@@ -12,6 +12,21 @@ import definedPieces from "./pieces"
 //Drag a piece ontop of itself during start game state and check for an error
 //Figure out why the movement just randomly breaks sometimes
 
+//Create a checkmate checker
+//Prevent moves that would put you in check, and highlight the check tiles fully red when selecting the king
+
+//Change the calculate moves to:
+//1) call another function, passing the square and board that then returns the targetted by object (including an array of blocking pieces and their colours, and the path)
+//2) append this result to an array
+//3) repeat for all pieces of a given colour
+//4) use that array at the end to update the board param passed
+//5) at the start of the game, will need to calculate both side's moves, then recalc for whatever side ran first 
+//(just the pieces blocking the other player's pieces targetting the king) to account for boards that start in check
+
+
+//WHEN DETERMINING IF IT'S STILL ON THE PATH OF THE KING, CHECK IF THE FIRST INDEX OF THE NEW SQUARE IS BEFORE THE INDEX OF THE KING'S SQUARE
+//Surrounding a black king on D5 with white kings doesnt seem to properly set the kingTargetedBy
+//An error is thrown if trying to start a game without 2 kings. prevent game from starting in this case
 
 export function Chess() {
 
@@ -24,11 +39,11 @@ export function Chess() {
         x: number,
         y: number,
         firstTurn: boolean,
-        targetedBy: TargetedBy,
-        targeting: TargetingSquare[]
+        targeting: TargetingSquare[],
+        kingTargetedBy?: TargetingSquare[]
     } 
 
-    interface TargetedBy { 
+    interface Target { 
         black: TargetingSquare[],
         white: TargetingSquare[]
     }
@@ -37,7 +52,10 @@ export function Chess() {
         target: string,
         source: string,
         moveable: boolean,
-        capture: boolean
+        capture: boolean,
+        moveOnly: boolean,
+        path: string[],
+        blockedBy: string[]
     }
 
     interface PiecesToAdd {
@@ -49,6 +67,20 @@ export function Chess() {
     interface GameState {
         inProgress: boolean,
         currentPlayer: 'white' | 'black'
+    }
+
+    interface TargettableSquareReducer {
+        currentIteration: {
+            x: number,
+            y: number,
+            outOfBounds: boolean,
+            blocked: boolean,
+            capture: boolean,
+            moveOnly: boolean,
+            blockedBy: string[],
+            path: string[]
+        }
+        squares: TargetingSquare[]
     }
 
     //Storing the board / game state in state
@@ -75,10 +107,6 @@ export function Chess() {
                     x: j-64,
                     y: i,
                     firstTurn: false,
-                    targetedBy: {
-                        black: [],
-                        white: []
-                    },
                     targeting: []
                 });
             }
@@ -135,6 +163,7 @@ export function Chess() {
             const piece = pieces.find((piece) => piece.squareId === square.id);
             if (piece === undefined) {
                 return {
+                    ...square
                     ...square
                 }
             } else {
@@ -209,6 +238,7 @@ export function Chess() {
         const colour = e.dataTransfer.getData("Colour");
         const piece = e.dataTransfer.getData("Piece");
         const sourceSquareId = e.dataTransfer.getData('squareId');
+        const currentSquare = board.find(square => square.id === sourceSquareId)!;
 
         //Grabbing the target square, and returning out of the function if the target square is the parent square
         if ((e.target as HTMLElement).nodeName ==='IMG') {
@@ -224,15 +254,30 @@ export function Chess() {
             if (colour !== gameState.currentPlayer) {return}
 
             //Returning if trying to move to an invalid square
-            const targetedBy = targetSquare.targetedBy[colour as keyof TargetedBy];
-            const moveable = targetedBy.find(targettingSquares => targettingSquares.source === sourceSquareId)?.moveable;
+            const targeting = currentSquare.targeting;
+            const moveable = targeting.find(targettingSquares => targettingSquares.target === targetSquare.id)?.moveable;
             if (!moveable) {return}
 
             //Moving the piece
             let newBoard = RemovePiece(boardRef.current, sourceSquareId);
             newBoard = AddPiece(newBoard, [{squareId: targetSquare.id, pieceId: piece, colour: colour}]);
-            //Calculating possible moves
-            newBoard = CalculateMoves(newBoard);
+            
+            //Updating the possible moves for newly empty square / the opposing king's kingTargetedBy array
+            const sourceSquareIndex = newBoard.findIndex(square => square.id === sourceSquareId);
+            newBoard[sourceSquareIndex].targeting = [];
+            const kingSquare = newBoard.find(square => square.colour !== colour && square.piece === 'king')!;
+            const indexToRemove = kingSquare.kingTargetedBy?.findIndex(move => move.source === sourceSquareId);
+            if (indexToRemove) {
+                kingSquare.kingTargetedBy!.splice(indexToRemove, 1);
+            }
+
+            //Updating the possible moves for the moved to square
+            const moves = ReturnPieceMoves(newBoard, newBoard.find(square => square.id === targetSquare.id)!);
+            MutateBoardWithMoves(newBoard, moves, targetSquare.id, kingSquare.id);
+
+            //Calculating the possible moves for the next player's next turn
+            newBoard = CalculateMoves(newBoard, colour === 'white' ? 'black' : 'white');
+            
             //Updating the state / HTML
             setBoardAndHtml(newBoard);    
             RemoveHighlights();
@@ -314,8 +359,9 @@ export function Chess() {
             pieces[i].addEventListener("dragstart", (e) => SelectPiece(e));
         }
 
-        //Calculating possible moves
-        setBoard(CalculateMoves(boardRef.current));
+        //Calculating possible moves. Black is calculated to account for boards where black pieces are immediately targetting the white king, thus changing white's possible moves
+        const newBoard = CalculateMoves(boardRef.current, 'black');
+        setBoard(CalculateMoves(newBoard, 'white'));
 
         //Updating state
         setGameState(prevState => ({
@@ -341,6 +387,7 @@ export function Chess() {
         if (squareObj.colour !== gameStateRef.current.currentPlayer) {return}
 
         // //Adding a highlight to all possible moves
+        // //Adding a highlight to all possible moves
         piece.parentElement.classList.add("highlight-select");
 
         if (!squareObj.targeting) { return }
@@ -365,116 +412,121 @@ export function Chess() {
     }
 
     //Returning all possible moves
-    const CalculateMoves = (board: Square[]) => {
+    const CalculateMoves = (board: Square[], colour: keyof Target) => {
         
-        //Removing the last set of calculations
-        board = board.map((square) => {
-            return {
-                ...square,
-                targetedBy: {
-                    white: [],
-                    black: []
-                },
-                targeting: []
+        //Removing the last set of calculations for the passed colour
+        const newBoard: Square[] = board.map((square) => {
+            if (square.colour === colour) {
+                return {
+                    ...square,
+                    targeting: []
+                }
+            } else {
+                return {
+                    ...square,
+                    kingTargetedBy: undefined
+                }
             }
-        })
-        
-        const squaresToCalculate: Square[] = board.filter((square) => square.piece)
+        });
+
+        //Retrieving the king's square ID to establish what moves need to be appended to the kingTargetedBy array
+        const kingSquareIndex = newBoard.findIndex( square => square.piece==='king' && square.colour === (colour === 'white' ? 'black' : 'white'));
+        const kingSquare = newBoard[kingSquareIndex];
+
+        //Calculating the moves of the passed colour
+        const squaresToCalculate: Square[] = newBoard.filter((square) => square.piece && square.colour === colour);
         squaresToCalculate.map((square) => {
 
             //Exitting if no square found
-            if (!square) { return board }
+            if (!square) { return newBoard }
 
-            //Grabbing and returning the moves if they have already been calculated this turn
-            // if (square.movesCalculated) {
-            //     const moves = (boardRef.current.filter((currSquare) => {
-            //         return currSquare.targetedBy[square.colour as keyof typeof currSquare.targetedBy].some((move) => move.source === square.id)
-            //     })
-            //     .reduce((moves: TargetingSquare[], targetedSquare) => {
-            //         const currMoves = targetedSquare.targetedBy[square.colour as keyof typeof targetedSquare.targetedBy].filter((move) => move.source === square.id)
-            //         return moves.concat(currMoves)
-            //     }, []));
+            //Calculating moves for the current square
+            const moves = ReturnPieceMoves(newBoard, square);
+            MutateBoardWithMoves(newBoard, moves, square.id, kingSquare.id, kingSquareIndex);
+        })
 
-            //     return{
-            //         newBoard: boardRef.current,
-            //         moves: moves
-            //     }
-            // }
+        return newBoard;
+    };
 
-            //Returning the corresponding piece object
-            const pieceObj = definedPieces.find(piece => {
-                return piece.id === square.piece;
-            });
+    //This function takes a square and board to return an array of all possible moves. Returns a targetingSquare array instead of a new board to reduce memory/performance cost of initialising new boards
+    const ReturnPieceMoves = (board: Square[], square: Square):  TargetingSquare[] => {
+        
+        //Returning a blank array if the square doesn't have a piece
+        if (!square.piece) { return [] } 
 
-            if (!pieceObj) { return board };
-
-            //Interfaces used in the reduce call
-            interface TargettableSquareReducer {
-                currentIteration: {
-                    x: number,
-                    y: number,
-                    outOfBounds: boolean,
-                    blocked: boolean,
-                    capture: boolean
-                }
-                squares: TargetingSquare[]
-            }
+        //Returning the corresponding piece object
+        const pieceObj = definedPieces.find(piece => {
+            return piece.id === square.piece;
+        })!;
 
             const moves = pieceObj.movement.reduce((result: TargettableSquareReducer, direction) => {
 
-                //Resetting the variables for the current iteration
-                result.currentIteration = {
-                    x: square.x,
-                    y: square.y,
-                    outOfBounds: false,
-                    blocked: false,
-                    capture: false
-                };
+            //Resetting the variables for the current iteration
+            result.currentIteration = {
+                x: square.x,
+                y: square.y,
+                outOfBounds: false,
+                blocked: false,
+                capture: false,
+                moveOnly: false,
+                blockedBy: [],
+                path: []
+            };
 
                 if (direction.firstMoveOnly && !square.firstTurn) { return result }
 
-                //Repeating the movement for repeatable patterns
-                for (let i = 0; i < direction.range; i++) {
-                    //Following the specified path. This allows for pieces that can only capture at the end of a specified path to be created. forEach is used instead of reduce to allow for short circuits
-                    direction.path.forEach((step, index, path) => {
-                        //Calculating the next square
-                        result.currentIteration.x += step[0] * (square.colour === 'black' ? -1 : 1);
-                        result.currentIteration.y += step[1] * (square.colour === 'black' ? -1 : 1);
+            //Repeating the movement for repeatable patterns
+            for (let i = 0; i < direction.range; i++) {
+                result.currentIteration.moveOnly = direction.moveOnly ? true : false;
+                //Following the specified path. This allows for pieces that can only capture at the end of a specified path to be created. forEach is used instead of reduce to allow for short circuits
+                direction.path.forEach((step, index, path) => {
+                    //Calculating the next square
+                    result.currentIteration.x += step[0] * (square.colour === 'black' ? -1 : 1);
+                    result.currentIteration.y += step[1] * (square.colour === 'black' ? -1 : 1);
 
                         //Retrieving the square from state
                         const targetSquare = board.find((square) => {
                             return square.x === result.currentIteration.x && square.y === result.currentIteration.y;
                         })
 
-                        if (!targetSquare) {
-                            result.currentIteration.outOfBounds = true;
-                            return;                        
-                        }
+                    if (!targetSquare) {
+                        result.currentIteration.outOfBounds = true;
+                        return;                        
+                    }
 
-                        //Setting blocked = true if there is a piece on a square that isn't a capture square or if the piece is the same colour
-                        if (targetSquare!.piece !== null) {
-                            if (index !== path.length - 1 || direction.moveOnly || targetSquare!.colour === square.colour) {
-                                result.currentIteration.blocked = true;
-                            } else {
-                                if (!result.currentIteration.blocked) { result.currentIteration.capture = true; }
-                            }
+                    //Adding the current step's square to the path array
+                    result.currentIteration.path.push(targetSquare.id);
+
+
+                    //Setting blocked = true if there is a piece on a square that isn't a capture square or if the piece is the same colour
+                    if (targetSquare!.piece !== null) {
+                        if (index !== path.length - 1 || direction.moveOnly || targetSquare!.colour === square.colour) {
+                            result.currentIteration.blocked = true;
+                            //Appending the blocker to the blockedBy array
+                            if (!result.currentIteration.blockedBy.find(squareId => squareId === targetSquare.id)) { result.currentIteration.blockedBy.push(targetSquare.id) }
+                        } else {
+                            if (!result.currentIteration.blocked) { result.currentIteration.capture = true; }
                         }
-                    });
+                    }
+                });
 
                     if (result.currentIteration.outOfBounds) { return result; }
                 
                     const targetSquare = board.find((square) => square.x === result.currentIteration.x && square.y === result.currentIteration.y)
 
-                    const currentTargettableSquare: TargetingSquare = {
-                        target: targetSquare!.id,
-                        source: square.id,
-                        //Can move to the square if under the following conditions:
-                        //1) The piece isn't blocked at any point in its path
-                        //2) The direction isn't capture only, or it's capture only but there's a capturable piece on the target square
-                        //3) The direction isn't only allowed on the piece's first move, or it's the piece's first move
-                        moveable: !result.currentIteration.blocked && (!direction.captureOnly || direction.captureOnly && result.currentIteration.capture) && (!direction.firstMoveOnly || square.firstTurn),
-                        capture: result.currentIteration.capture
-                    }
+                const currentTargettableSquare: TargetingSquare = {
+                    target: targetSquare!.id,
+                    source: square.id,
+                    //Can move to the square if under the following conditions:
+                    //1) The piece isn't blocked at any point in its path
+                    //2) The direction isn't capture only, or it's capture only but there's a capturable piece on the target square
+                    //3) The direction isn't only allowed on the piece's first move, or it's the piece's first move
+                    moveable: !result.currentIteration.blocked && (!direction.captureOnly || direction.captureOnly && result.currentIteration.capture) && (!direction.firstMoveOnly || square.firstTurn),
+                    capture: result.currentIteration.capture,
+                    moveOnly: result.currentIteration.moveOnly,
+                    path: result.currentIteration.path,
+                    blockedBy: result.currentIteration.blockedBy
+                }
 
                     //Setting blocked for next iterations if the destination tile contains a piece
                     if (result.currentIteration.capture) { result.currentIteration.blocked=true; }
@@ -487,40 +539,39 @@ export function Chess() {
 
                 return result;
 
-            }, { currentIteration: { x: 0, y: 0, outOfBounds: false, blocked: false, capture: false }, squares: [] });
+        }, { currentIteration: { x: 0, y: 0, outOfBounds: false, blocked: false, capture: false, moveOnly: false, blockedBy: [], path: [] }, squares: [] });
 
-            if (!moves.squares) { return board }
+        return moves.squares;
 
-            //Updating board to reflect the moveable squares
-            board = board.map((currSquare: Square) => {
+    }
 
-                if (moves.squares!.some(move => move.target === currSquare.id)) {
-                    const viableMove = moves.squares.find(move => move.target === currSquare.id);
-                    return {
-                        ...currSquare,
-                        targetedBy: {
-                            ...currSquare.targetedBy,
-                            [square.colour!]: [
-                                ...currSquare.targetedBy[square.colour! as keyof typeof currSquare.targetedBy],
-                                viableMove
-                            ]
-                        }
-                    };
-                } else if (currSquare.id === square.id) {
-                    return {
-                        ...currSquare,
-                        targeting: moves.squares
-                    }
-                } else {
-                    return {
-                        ...currSquare
-                    }
-                }
-            });
-        })
-        return board;
-    };
+    //This is a function used to mutate the board passed, adding the moves to the correct squares
+    const MutateBoardWithMoves = (board: Square[], moves: TargetingSquare[], sourceSquareId: string, opposingKingSquareId?: string, opposingKingIndex?: number) => {
 
+        //These parameters are optional to allow for excess calculations to be skipped
+        if (!opposingKingSquareId) {
+            const colour = board.find(square => square.id === sourceSquareId)!.colour;
+            opposingKingSquareId = board.find(square => square.piece === 'king' && square.colour !== colour)!.id;
+        }
+
+        if (!opposingKingIndex) {
+            opposingKingIndex = board.findIndex(square => square.id === opposingKingSquareId)!;
+        }
+
+        //Updating the new board with the returned moves
+        const index = board.findIndex( currSquare => currSquare.id === sourceSquareId );
+        board[index].targeting = moves; 
+
+        //Updating the king's square if the move is targeting the king
+        const targetingKingMove = moves.find(move => move.target === opposingKingSquareId);
+        if (targetingKingMove) {
+            if (board[opposingKingIndex].kingTargetedBy) { 
+                board[opposingKingIndex].kingTargetedBy!.push(targetingKingMove) 
+            } else {
+                board[opposingKingIndex].kingTargetedBy = [targetingKingMove];
+            } 
+        };
+    }
 
     return (
         <div className="main-container" onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
