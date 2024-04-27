@@ -24,9 +24,12 @@ import definedPieces from "./pieces"
 //(just the pieces blocking the other player's pieces targetting the king) to account for boards that start in check
 
 
-//WHEN DETERMINING IF IT'S STILL ON THE PATH OF THE KING, CHECK IF THE FIRST INDEX OF THE NEW SQUARE IS BEFORE THE INDEX OF THE KING'S SQUARE
-//Surrounding a black king on D5 with white kings doesnt seem to properly set the kingTargetedBy
 //An error is thrown if trying to start a game without 2 kings. prevent game from starting in this case
+//Only allow 1 king to be added or allow for multiple kings (need to change how we find the king's index in that case, as this only works with 1 king)
+
+//Need to think about how I will change the function that calculates moves to only allow moves that will get you out of check if you're currently in check. This will involve finding intersects in paths if multiple pieces
+//are targeting the king
+
 
 export function Chess() {
 
@@ -164,7 +167,6 @@ export function Chess() {
             if (piece === undefined) {
                 return {
                     ...square
-                    ...square
                 }
             } else {
                 return {
@@ -267,7 +269,7 @@ export function Chess() {
             newBoard[sourceSquareIndex].targeting = [];
             const kingSquare = newBoard.find(square => square.colour !== colour && square.piece === 'king')!;
             const indexToRemove = kingSquare.kingTargetedBy?.findIndex(move => move.source === sourceSquareId);
-            if (indexToRemove) {
+            if (indexToRemove !== -1 && indexToRemove !== undefined) {
                 kingSquare.kingTargetedBy!.splice(indexToRemove, 1);
             }
 
@@ -387,7 +389,6 @@ export function Chess() {
         if (squareObj.colour !== gameStateRef.current.currentPlayer) {return}
 
         // //Adding a highlight to all possible moves
-        // //Adding a highlight to all possible moves
         piece.parentElement.classList.add("highlight-select");
 
         if (!squareObj.targeting) { return }
@@ -459,7 +460,27 @@ export function Chess() {
             return piece.id === square.piece;
         })!;
 
-            const moves = pieceObj.movement.reduce((result: TargettableSquareReducer, direction) => {
+        //Retrieving the king to check for blockers
+        const allyKingSquare = board.find(currSquare => currSquare.piece === 'king' && currSquare.colour === square.colour)!;
+        const opposingKingSquare = board.find(currSquare => currSquare.piece === 'king' && currSquare.colour !== square.colour)!;
+
+        //Returning the path of all possible check moves that the current piece is blocking
+        const blockingPaths: string[][] | undefined = allyKingSquare.kingTargetedBy
+            ?.filter(move => move.blockedBy
+            .includes(square.id) && move.blockedBy.length === 1)
+            .map(move => move.path);
+        
+        //Flattening the array and removing duplicates to leave a list of all squares that are in a potential check's path (only checks blocked soley by the current piece being calculated)
+        const blockingSquares = ([new Set(blockingPaths?.flat())])[0];
+
+        //Returning all squares that would block all potential checks that the current piece is already blocking
+        const blocksAllChecks = (Array.from(blockingSquares)
+            .filter(squareId => blockingPaths?.every(path => path.includes(squareId)))
+        );
+
+        //const validBlockingSquares = new Set<string>(blockingPaths);
+
+        const moves = pieceObj.movement.reduce((result: TargettableSquareReducer, direction) => {
 
             //Resetting the variables for the current iteration
             result.currentIteration = {
@@ -470,10 +491,10 @@ export function Chess() {
                 capture: false,
                 moveOnly: false,
                 blockedBy: [],
-                path: []
+                path: [square.id]
             };
 
-                if (direction.firstMoveOnly && !square.firstTurn) { return result }
+            if (direction.firstMoveOnly && !square.firstTurn) { return result }
 
             //Repeating the movement for repeatable patterns
             for (let i = 0; i < direction.range; i++) {
@@ -484,38 +505,41 @@ export function Chess() {
                     result.currentIteration.x += step[0] * (square.colour === 'black' ? -1 : 1);
                     result.currentIteration.y += step[1] * (square.colour === 'black' ? -1 : 1);
 
-                        //Retrieving the square from state
-                        const targetSquare = board.find((square) => {
-                            return square.x === result.currentIteration.x && square.y === result.currentIteration.y;
-                        })
+                    //Retrieving the square from state
+                    const stepTargetSquare = board.find((square) => {
+                        return square.x === result.currentIteration.x && square.y === result.currentIteration.y;
+                    })
 
-                    if (!targetSquare) {
+                    if (!stepTargetSquare) {
                         result.currentIteration.outOfBounds = true;
                         return;                        
                     }
 
-                    //Adding the current step's square to the path array
-                    result.currentIteration.path.push(targetSquare.id);
-
+                    //Adding the current step's square to the path array if the path doesn't already include the opposing king's square. This is to calculate what squares block check
+                    if (!result.currentIteration.path.find(squareId => squareId === opposingKingSquare.id)) { result.currentIteration.path.push(stepTargetSquare.id) };
 
                     //Setting blocked = true if there is a piece on a square that isn't a capture square or if the piece is the same colour
-                    if (targetSquare!.piece !== null) {
-                        if (index !== path.length - 1 || direction.moveOnly || targetSquare!.colour === square.colour) {
+                    if (stepTargetSquare!.piece !== null) {
+                        //Appending the blocker to the blockedBy array
+                        if (stepTargetSquare.piece !== 'king' && stepTargetSquare.colour !== square.colour && !result.currentIteration.blockedBy.find(squareId => squareId === stepTargetSquare.id)) { result.currentIteration.blockedBy.push(stepTargetSquare.id) }
+                        if (index !== path.length - 1 || direction.moveOnly || stepTargetSquare!.colour === square.colour) {
                             result.currentIteration.blocked = true;
-                            //Appending the blocker to the blockedBy array
-                            if (!result.currentIteration.blockedBy.find(squareId => squareId === targetSquare.id)) { result.currentIteration.blockedBy.push(targetSquare.id) }
                         } else {
                             if (!result.currentIteration.blocked) { result.currentIteration.capture = true; }
                         }
                     }
                 });
 
-                    if (result.currentIteration.outOfBounds) { return result; }
+                //Early return if the path goes out of bounds
+                if (result.currentIteration.outOfBounds) { return result; }
+            
+                const destTargetSquare = board.find((square) => square.x === result.currentIteration.x && square.y === result.currentIteration.y)!;
                 
-                    const targetSquare = board.find((square) => square.x === result.currentIteration.x && square.y === result.currentIteration.y)
+                //Early return if the destination tile leaves the current player's king in check
+                if (blocksAllChecks.length > 0 && !blocksAllChecks.find(squareId => squareId === destTargetSquare.id) && destTargetSquare !== opposingKingSquare) { return result; }
 
                 const currentTargettableSquare: TargetingSquare = {
-                    target: targetSquare!.id,
+                    target: destTargetSquare!.id,
                     source: square.id,
                     //Can move to the square if under the following conditions:
                     //1) The piece isn't blocked at any point in its path
@@ -528,14 +552,14 @@ export function Chess() {
                     blockedBy: result.currentIteration.blockedBy
                 }
 
-                    //Setting blocked for next iterations if the destination tile contains a piece
-                    if (result.currentIteration.capture) { result.currentIteration.blocked=true; }
-                    
-                    result.squares.push(currentTargettableSquare);
+                //Setting blocked for next iterations if the destination tile contains a piece
+                if (result.currentIteration.capture) { result.currentIteration.blocked=true; }
+                
+                result.squares.push(currentTargettableSquare);
 
-                    //Setting capture for next iterations if the path was blocked in a previous iteration
-                    if (result.currentIteration.blocked) { result.currentIteration.capture=false; }
-                };
+                //Setting capture for next iterations if the path was blocked in a previous iteration
+                if (result.currentIteration.blocked) { result.currentIteration.capture=false; }
+            };
 
                 return result;
 
@@ -560,10 +584,10 @@ export function Chess() {
 
         //Updating the new board with the returned moves
         const index = board.findIndex( currSquare => currSquare.id === sourceSquareId );
-        board[index].targeting = moves; 
+        board[index].targeting = moves;
 
         //Updating the king's square if the move is targeting the king
-        const targetingKingMove = moves.find(move => move.target === opposingKingSquareId);
+        const targetingKingMove = moves.find(move => move.target === opposingKingSquareId && !move.moveOnly);
         if (targetingKingMove) {
             if (board[opposingKingIndex].kingTargetedBy) { 
                 board[opposingKingIndex].kingTargetedBy!.push(targetingKingMove) 
