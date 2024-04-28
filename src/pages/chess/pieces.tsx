@@ -65,6 +65,10 @@ const definedPieces: Piece[] = [
         {
             path: [[1,1]],
             range: 7
+        },
+        {
+            path: [[1,0], [0,1], [0,1]],
+            range: 1
         }
     ]
 },

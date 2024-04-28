@@ -478,7 +478,18 @@ export function Chess() {
             .filter(squareId => blockingPaths?.every(path => path.includes(squareId)))
         );
 
-        //const validBlockingSquares = new Set<string>(blockingPaths);
+        //Returning the current checks
+        const currChecks = allyKingSquare.kingTargetedBy
+            ?.filter(move => move.capture)
+            .map(move => move.path);
+
+        //Flattening the array and removing duplicates to leave a list of all squares that are in a check's path
+        const currChecksSquares = ([new Set(currChecks?.flat())])[0];
+
+        //Returning all intercepts in the check paths
+        const currCheckIntercepts = (Array.from(currChecksSquares)
+            .filter(squareId => currChecks?.every(path => path.includes(squareId)))
+        );
 
         const moves = pieceObj.movement.reduce((result: TargettableSquareReducer, direction) => {
 
@@ -536,7 +547,7 @@ export function Chess() {
                 const destTargetSquare = board.find((square) => square.x === result.currentIteration.x && square.y === result.currentIteration.y)!;
                 
                 //Early return if the destination tile leaves the current player's king in check
-                if (blocksAllChecks.length > 0 && !blocksAllChecks.find(squareId => squareId === destTargetSquare.id) && destTargetSquare !== opposingKingSquare) { return result; }
+                if (((blocksAllChecks.length > 0 && !blocksAllChecks.find(squareId => squareId === destTargetSquare.id)) || (currCheckIntercepts.length > 0 && !currCheckIntercepts.find(squareId => squareId === destTargetSquare.id))) && destTargetSquare !== opposingKingSquare) { continue; }
 
                 const currentTargettableSquare: TargetingSquare = {
                     target: destTargetSquare!.id,
