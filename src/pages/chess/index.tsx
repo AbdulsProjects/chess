@@ -546,8 +546,17 @@ export function Chess() {
             
                 const destTargetSquare = board.find((square) => square.x === result.currentIteration.x && square.y === result.currentIteration.y)!;
                 
-                //Early return if the destination tile leaves the current player's king in check
-                if (((blocksAllChecks.length > 0 && !blocksAllChecks.find(squareId => squareId === destTargetSquare.id)) || (currCheckIntercepts.length > 0 && !currCheckIntercepts.find(squareId => squareId === destTargetSquare.id))) && destTargetSquare !== opposingKingSquare) { continue; }
+                //Moves that target the king are always recorded
+                if (destTargetSquare !== opposingKingSquare) {
+                    //The move isn't recorded under the following conditions
+                    //The move opens up a new check
+                    if ((blocksAllChecks.length > 0 && !blocksAllChecks.find(squareId => squareId === destTargetSquare.id))) { continue; }
+                    //The move doesn't block all current checks
+                    if (currCheckIntercepts.length > 0 && !currCheckIntercepts.find(squareId => squareId === destTargetSquare.id)) { continue; }
+                    //The move is blocked, or is a capture only / first turn only move and it's not a capture square / the first turn
+                    if (result.currentIteration.blocked || (direction.captureOnly && !result.currentIteration.capture) || (direction.firstMoveOnly && !square.firstTurn)) { continue; }
+                    // console.log(result.currentIteration.blocked || (direction.captureOnly && !result.currentIteration.capture) || (direction.firstMoveOnly && !square.firstTurn))
+                }
 
                 const currentTargettableSquare: TargetingSquare = {
                     target: destTargetSquare!.id,
