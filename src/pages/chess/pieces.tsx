@@ -24,8 +24,8 @@ const definedPieces: Piece[] = [
         {
             moveOnly: true,
             firstMoveOnly: true,
-            path: [[0,1]],
-            range: 2
+            path: [[0,1],[0,1]],
+            range: 1
         },
         {
             moveOnly: true,
@@ -66,6 +66,7 @@ const definedPieces: Piece[] = [
             path: [[1,1]],
             range: 7
         },
+        //THIS IS A TESTING PATH, NEEDS TO BE REMOVED ONCE TESTING IS FINISHED
         {
             path: [[1,0], [0,1], [0,1]],
             range: 1
