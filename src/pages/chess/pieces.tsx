@@ -4,6 +4,7 @@ interface Piece {
     id: string,
     name: string,
     points: number,
+    canPromote: boolean,
     movement: Movement[]
 }
 
@@ -20,6 +21,7 @@ const definedPieces: Piece[] = [
     id: "pawn",
     name: "pawn",
     points: 1,
+    canPromote: true,
     movement: [
         {
             moveOnly: true,
@@ -49,6 +51,7 @@ const definedPieces: Piece[] = [
     id: "bishop",
     name: "bishop",
     points: 3,
+    canPromote: false,
     movement: [
         {
             path: [[-1,-1]],
@@ -77,6 +80,7 @@ const definedPieces: Piece[] = [
     id: "knight",
     name: "knight",
     points: 3,
+    canPromote: false,
     movement: [
         {
             path: [[1,2]],
@@ -115,6 +119,7 @@ const definedPieces: Piece[] = [
     id: "rook",
     name: "rook",
     points: 5,
+    canPromote: false,
     movement: [
         {
             path: [[-1,0]],
@@ -138,6 +143,7 @@ const definedPieces: Piece[] = [
     id: "queen",
     name: "queen",
     points: 9,
+    canPromote: false,
     movement: [
         {
             path: [[-1,-1]],
@@ -177,6 +183,7 @@ const definedPieces: Piece[] = [
     id: "king",
     name: "king",
     points: 0,
+    canPromote: false,
     movement: [
         {
             path: [[-1,-1]],
