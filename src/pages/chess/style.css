@@ -86,3 +86,7 @@ button {
 .highlight-capture {
     border: 5px solid red;
 }
+
+.highlight-promote {
+    background-color: yellow;
+}

@@ -1,6 +1,7 @@
 import "./style.css"
 import React, { useEffect, useRef, useState } from 'react'
 import definedPieces from "./pieces"
+import { Promotion } from "./promotion"
 
 //THINGS TO DO
 //Split the drop handler for on / off board
@@ -10,25 +11,12 @@ import definedPieces from "./pieces"
 //See if you can tidy up the function that finds the targettable squares, and change the knight object to move clockwise
 //Check if boardRef.current needs to replace all references to board
 //Drag a piece ontop of itself during start game state and check for an error
-//Figure out why the movement just randomly breaks sometimes
 
 //Create a checkmate checker
 //Prevent moves that would put you in check, and highlight the check tiles fully red when selecting the king
 
-//Change the calculate moves to:
-//1) call another function, passing the square and board that then returns the targetted by object (including an array of blocking pieces and their colours, and the path)
-//2) append this result to an array
-//3) repeat for all pieces of a given colour
-//4) use that array at the end to update the board param passed
-//5) at the start of the game, will need to calculate both side's moves, then recalc for whatever side ran first 
-//(just the pieces blocking the other player's pieces targetting the king) to account for boards that start in check
-
-
 //An error is thrown if trying to start a game without 2 kings. prevent game from starting in this case
 //Only allow 1 king to be added or allow for multiple kings (need to change how we find the king's index in that case, as this only works with 1 king)
-
-//Need to think about how I will change the function that calculates moves to only allow moves that will get you out of check if you're currently in check. This will involve finding intersects in paths if multiple pieces
-//are targeting the king
 
 
 export function Chess() {
@@ -72,7 +60,11 @@ export function Chess() {
 
     interface GameState {
         inProgress: boolean,
-        currentPlayer: 'black' | 'white'
+        currentPlayer: 'black' | 'white',
+        promotions: {
+            black: string[];
+            white: string[]
+        }
     }
 
     interface TargettableSquareReducer {
@@ -96,8 +88,13 @@ export function Chess() {
     const [board, setBoard] = useState<Square[]>([]);
     const [gameState, setGameState] = useState<GameState>({
         inProgress: false,
-        currentPlayer: 'white'
+        currentPlayer: 'white',
+        promotions: {
+            black: [],
+            white: []
+        }
     })
+
     const boardRef = useRef<Square[]>([]);
     const gameStateRef = useRef<GameState>(gameState);
 
@@ -126,6 +123,47 @@ export function Chess() {
         }
         setBoard(localBoard);
     }, [])
+
+    //Checking for promotions whenever the board is updated
+    useEffect(() => {
+    
+        const promotions: {black: string[], white: string[]} = {
+            black: [],
+            white: []
+        }
+        
+        //Checking the black promotion squares
+        for (let i = 1; i <= 8; i++) {
+            const square = board.find(square => square.x === i && square.y === 1 && square.piece && square.colour === 'black');
+            if (!square || !definedPieces.find(piece => piece.id === square!.piece)!.canPromote) { continue; }
+            promotions.black.push(square.id);
+        }
+
+        //Checking the white promotion squares
+        for (let i = 1; i <= 8; i++) {
+            const square = board.find(square => square.x === i && square.y === 8 && square.piece && square.colour === 'white');
+            if (!square || !definedPieces.find(piece => piece.id === square!.piece)!.canPromote) { continue; }
+            promotions.white.push(square.id);
+        }
+
+        setGameState(prevState => ({
+            ...prevState,
+            promotions: promotions
+        }));
+
+        //Removing promotion highlights from all pieces
+        const highlightedSquares = document.getElementsByClassName("highlight-promote");
+        for (let i = 0; i < highlightedSquares.length; i++) {
+            highlightedSquares[i].classList.remove("highlight-promote");
+        }
+
+        //Adding promotion highlight to the first square in the array
+        if ((promotions.white.length > 0 || promotions.black.length > 0) && gameState.inProgress) {
+            const currentPromotionSquare = document.getElementById(promotions.white.length > 0 ? promotions.white[0] : promotions.black[0])!;
+            currentPromotionSquare.classList.add("highlight-promote")
+        }
+
+    }, [board])
 
     //General Functions
 
@@ -220,6 +258,11 @@ export function Chess() {
         return(newBoard);
     }
 
+    //Returning a boolean to specify if the interactivity should be disabled
+    const DisableInteractivity = (): boolean => {
+        return gameStateRef.current.promotions.black.length > 0 || gameStateRef.current.promotions.white.length > 0;
+    }
+
     //Event Handlers
 
     //Generic handlers
@@ -298,7 +341,7 @@ export function Chess() {
             setGameState(prevState => ({
                 ...prevState,
                 currentPlayer: prevState.currentPlayer === 'white' ? 'black' : 'white'
-            }))
+            }));
         } else {
             //Adding the piece
             setBoardAndHtml(AddPiece(boardRef.current, [{squareId: targetSquare.id, pieceId: piece, colour: colour}]));
@@ -323,7 +366,6 @@ export function Chess() {
 
     //Functions to set up different board types
     const StandardGame = () => {
-        
         const newBoard: Square[] = ClearBoard();
         setBoardAndHtml(AddPiece(newBoard, [
             {squareId: 'A8', pieceId: 'rook', colour: 'black'},
@@ -387,6 +429,7 @@ export function Chess() {
 
     const SelectPiece = (e: Event) => {
 
+        if (DisableInteractivity()) { return; }
         //Removing highlights from currently highlighted piece
         RemoveHighlights();
 
@@ -649,6 +692,7 @@ export function Chess() {
 
     return (
         <div className="main-container" onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
+            {(gameState.promotions.white.length > 0 || gameState.promotions.black.length > 0) && gameState.inProgress && <Promotion />}
             <div className="chess-container">
                 <div className="y-labels">
                     {[...Array(8)].map((item, index) => 
