@@ -5,6 +5,7 @@ export interface Piece {
     name: string,
     points: number,
     canPromote: boolean,
+    canCastle: boolean,
     movement: Movement[]
 }
 
@@ -22,6 +23,7 @@ const definedPieces: Piece[] = [
     name: "pawn",
     points: 1,
     canPromote: true,
+    canCastle: false,
     movement: [
         {
             moveOnly: true,
@@ -52,6 +54,7 @@ const definedPieces: Piece[] = [
     name: "bishop",
     points: 3,
     canPromote: false,
+    canCastle: false,
     movement: [
         {
             path: [[-1,-1]],
@@ -68,11 +71,6 @@ const definedPieces: Piece[] = [
         {
             path: [[1,1]],
             range: 7
-        },
-        //THIS IS A TESTING PATH, NEEDS TO BE REMOVED ONCE TESTING IS FINISHED
-        {
-            path: [[1,0], [0,1], [0,1]],
-            range: 1
         }
     ]
 },
@@ -81,6 +79,7 @@ const definedPieces: Piece[] = [
     name: "knight",
     points: 3,
     canPromote: false,
+    canCastle: false,
     movement: [
         {
             path: [[1,2]],
@@ -120,6 +119,7 @@ const definedPieces: Piece[] = [
     name: "rook",
     points: 5,
     canPromote: false,
+    canCastle: true,
     movement: [
         {
             path: [[-1,0]],
@@ -144,6 +144,7 @@ const definedPieces: Piece[] = [
     name: "queen",
     points: 9,
     canPromote: false,
+    canCastle: false,
     movement: [
         {
             path: [[-1,-1]],
@@ -184,6 +185,7 @@ const definedPieces: Piece[] = [
     name: "king",
     points: 0,
     canPromote: false,
+    canCastle: false,
     movement: [
         {
             path: [[-1,-1]],

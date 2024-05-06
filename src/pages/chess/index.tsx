@@ -363,7 +363,6 @@ export function Chess() {
             const sourceSquareIndex = newBoard.findIndex(square => square.id === sourceSquareId);
             newBoard[sourceSquareIndex].targeting = [];
 
-
             //Updating the possible moves for the moved to square
             const moves = ReturnPieceMoves(newBoard, newBoard.find(square => square.id === targetSquare.id)!);
             MutateBoardWithMoves(newBoard, moves, targetSquare.id);
