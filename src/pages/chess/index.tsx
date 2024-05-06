@@ -284,6 +284,36 @@ export function Chess() {
         return newBoard;
     }
 
+    const MovePiece = (prevBoard: Square[], oldSquareId: string, newSquareId: string): Square[] => {
+
+        const oldSquare = prevBoard.find(square => square.id === oldSquareId)!;
+        const colour = oldSquare.colour!;
+        const piece = oldSquare.piece!;
+
+        //Moving the piece
+        let newBoard = RemovePiece(prevBoard, oldSquareId);
+        newBoard = AddPiece(newBoard, [{squareId: newSquareId, pieceId: piece, colour: colour}]);
+        
+        //Updating the possible moves for newly empty square / the targeted squares
+        for (let i = 0; i < oldSquare.targeting.length; i++) {
+            const targetSquareIndex = newBoard.findIndex(square => square.id === oldSquare.targeting[i].target);
+            const targetMoveIndex = newBoard[targetSquareIndex].targetedBy[oldSquare.colour!].findIndex(move => move.source === oldSquare.id);
+            newBoard[targetSquareIndex].targetedBy[oldSquare.colour!].splice(targetMoveIndex, 1);
+        }            
+        const sourceSquareIndex = newBoard.findIndex(square => square.id === oldSquareId);
+        newBoard[sourceSquareIndex].targeting = [];
+
+        //Updating the possible moves for the moved to square
+        const moves = ReturnPieceMoves(newBoard, newBoard.find(square => square.id === newSquareId)!);
+        MutateBoardWithMoves(newBoard, moves, newSquareId);
+
+        //Calculating the possible moves for the next player's next turn
+        newBoard = CalculateMoves(newBoard, colour === 'white' ? 'black' : 'white');
+        
+        return newBoard
+    }
+
+
     const ClearBoard = (): Square[] => {
 
         let newBoard: Square[] = [...boardRef.current];
@@ -321,7 +351,7 @@ export function Chess() {
         e.dataTransfer.setData("squareId", (e.target as HTMLElement).parentElement!.id)
     }
 
-    const MovePiece = (e: React.DragEvent) => {
+    const DropPiece = (e: React.DragEvent) => {
 
         //Stopping bubbling to allow for dropping a piece on / off the board to be differentiated
         e.stopPropagation();
@@ -351,24 +381,7 @@ export function Chess() {
             if (!moveable) {return}
 
             //Moving the piece
-            let newBoard = RemovePiece(boardRef.current, sourceSquareId);
-            newBoard = AddPiece(newBoard, [{squareId: targetSquare.id, pieceId: piece, colour: colour}]);
-            
-            //Updating the possible moves for newly empty square / the targeted squares
-            for (let i = 0; i < currentSquare.targeting.length; i++) {
-                const targetSquareIndex = newBoard.findIndex(square => square.id === currentSquare.targeting[i].target);
-                const targetMoveIndex = newBoard[targetSquareIndex].targetedBy[currentSquare.colour!].findIndex(move => move.source === currentSquare.id);
-                newBoard[targetSquareIndex].targetedBy[currentSquare.colour!].splice(targetMoveIndex, 1);
-            }            
-            const sourceSquareIndex = newBoard.findIndex(square => square.id === sourceSquareId);
-            newBoard[sourceSquareIndex].targeting = [];
-
-            //Updating the possible moves for the moved to square
-            const moves = ReturnPieceMoves(newBoard, newBoard.find(square => square.id === targetSquare.id)!);
-            MutateBoardWithMoves(newBoard, moves, targetSquare.id);
-
-            //Calculating the possible moves for the next player's next turn
-            newBoard = CalculateMoves(newBoard, colour === 'white' ? 'black' : 'white');
+            let newBoard = MovePiece(boardRef.current, sourceSquareId, targetSquare.id);
             
             //Updating the state / HTML
             setBoardAndHtml(newBoard);    
@@ -748,7 +761,7 @@ export function Chess() {
                 <div className='chess-board'>
                     {board.map((square) => {
                         const altRow = (square.id.charCodeAt(0) + Number(square.id[1])) % 2;
-                        return <div id={square.id} className={`square ${altRow ? "light-square": "dark-square"}`} onDrop={(e) => MovePiece(e)} onDragOver={HoverPiece} onDragStart={DivPreventDefault}></div>
+                        return <div id={square.id} className={`square ${altRow ? "light-square": "dark-square"}`} onDrop={(e) => DropPiece(e)} onDragOver={HoverPiece} onDragStart={DivPreventDefault}></div>
                     }
                     )}
                 </div>
