@@ -48,6 +48,7 @@ export function Chess() {
         moveable: boolean,
         capture: boolean,
         moveOnly: boolean,
+        castling: boolean,
         path: string[],
         blockedBy: {
             black: string[],
@@ -419,8 +420,8 @@ export function Chess() {
             {squareId: 'A8', pieceId: 'rook', colour: 'black'},
             {squareId: 'B8', pieceId: 'knight', colour: 'black'},
             {squareId: 'C8', pieceId: 'bishop', colour: 'black'},
-            {squareId: 'D8', pieceId: 'king', colour: 'black'},
-            {squareId: 'E8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'D8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'E8', pieceId: 'king', colour: 'black'},
             {squareId: 'F8', pieceId: 'bishop', colour: 'black'},
             {squareId: 'G8', pieceId: 'knight', colour: 'black'},
             {squareId: 'H8', pieceId: 'rook', colour: 'black'},
@@ -436,8 +437,8 @@ export function Chess() {
             {squareId: 'A1', pieceId: 'rook', colour: 'white'},
             {squareId: 'B1', pieceId: 'knight', colour: 'white'},
             {squareId: 'C1', pieceId: 'bishop', colour: 'white'},
-            {squareId: 'D1', pieceId: 'king', colour: 'white'},
-            {squareId: 'E1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'D1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'E1', pieceId: 'king', colour: 'white'},
             {squareId: 'F1', pieceId: 'bishop', colour: 'white'},
             {squareId: 'G1', pieceId: 'knight', colour: 'white'},
             {squareId: 'H1', pieceId: 'rook', colour: 'white'},
@@ -458,7 +459,7 @@ export function Chess() {
 
         //Updating the handlers of all pieces
         const pieces = document!.querySelectorAll('[id$=Piece]');//getElementsByClassName("piece");
-        for(let i=0; i < pieces.length; i++) {
+        for (let i=0; i < pieces.length; i++) {
             pieces[i].addEventListener("click", (e) => SelectPiece(e));
             pieces[i].addEventListener("dragstart", (e) => SelectPiece(e));
         }
@@ -508,7 +509,7 @@ export function Chess() {
     //Removing the highlights from all squares
     const RemoveHighlights = () => {
         const squares = document.querySelectorAll('div[class*="highlight"]');
-        for(let i=0; i < squares.length; i++) {
+        for (let i=0; i < squares.length; i++) {
             squares[i].classList.remove("highlight-select");
             squares[i].classList.remove("highlight-move");
             squares[i].classList.remove("highlight-capture");
@@ -547,6 +548,9 @@ export function Chess() {
             const moves = ReturnPieceMoves(newBoard, square);
             MutateBoardWithMoves(newBoard, moves, square.id);
         })
+
+        //Calculating castling moves
+        ReturnCastlingMoves(board, colour);
 
         return newBoard;
     };
@@ -641,6 +645,7 @@ export function Chess() {
                     moveable: !result.currentIteration.blocked && (!direction.captureOnly || direction.captureOnly && result.currentIteration.capture) && (nonCheckSquares.length === 0 || Boolean(nonCheckSquares.find(squareId => squareId === destTargetSquare.id))),
                     capture: result.currentIteration.capture,
                     moveOnly: result.currentIteration.moveOnly,
+                    castling: false,
                     path: [...result.currentIteration.path],
                     blockedBy: {
                         black: [...result.currentIteration.blockedBy.black],
@@ -663,6 +668,108 @@ export function Chess() {
 
         return moves.squares;
 
+    }
+
+    const ReturnCastlingMoves = (board: Square[], colour: keyof Target): TargetingSquare[] => {
+        //Castling is only allowed if:
+        //1) The king / castling piece start in the correct places
+        //2) The king / castling piece haven't moved yet
+        //3) The squares between the king and castling piece are empty
+        //4) The king doesn't pass over a targetted square
+        //5) The king isn't currently in check
+        
+        const kingSquare = board.find(square => square.id === (colour === 'black' ? 'E8' : 'E1'))!;
+
+        //Return if the king isn't on the starting square or the king has moved
+        if (kingSquare.piece !== 'king' || kingSquare.colour !== colour || !kingSquare.firstTurn) { return [] } 
+
+        const leftCastlingSquare = board.find(square => square.x === kingSquare.x - 4 && square.y === kingSquare.y)!;
+        const leftCastlingPiece = definedPieces.find(piece => piece.id === leftCastlingSquare.piece);
+        const rightCastlingSquare = board.find(square => square.x === kingSquare.x + 3 && square.y === kingSquare.y)!;
+        const rightCastlingPiece = definedPieces.find(piece => piece.id === rightCastlingSquare.piece);
+
+        //Return if the king is currently in check
+        if (kingSquare.targetedBy[colour === 'black' ? 'white' : 'black'].find(move => !move.moveOnly && [...move.blockedBy.black, ...move.blockedBy.white].length === 0)) { return[] }
+
+        //Checking if the left castle is a valid move
+        let leftCastleBlocked: Boolean = !leftCastlingPiece || !leftCastlingPiece.canCastle || !leftCastlingSquare.firstTurn;
+        //Checking if the 2 squares to the left of the king are targetted / occupied by another piece
+        for (let i = 1; i < 3 && !leftCastleBlocked; i++) {
+            const currSquare = board.find(square => square.x === kingSquare.x - i && square.y === kingSquare.y)!;
+            leftCastleBlocked = Boolean(currSquare.piece) || Boolean(currSquare.targetedBy[colour === 'black' ? 'white' : 'black'].find(move => !move.moveOnly && [...move.blockedBy.black, ...move.blockedBy.white].length === 0));
+        }
+        //Checking if the 3rd square to the left of the king is occupied
+        leftCastleBlocked = leftCastleBlocked || Boolean(board.find(square => square.x === kingSquare.x - 3 && square.y === kingSquare.y)!.piece);
+
+        //Checking if the right castle is a valid move
+        let rightCastleBlocked: Boolean = !rightCastlingPiece || !rightCastlingPiece.canCastle || !rightCastlingSquare.firstTurn;
+        //Checking if the 2 squares to the right of the king are targetted / occupied by another piece
+        for (let i = 1; i < 3 && !rightCastleBlocked; i++) {
+            const currSquare = board.find(square => square.x === kingSquare.x + i && square.y === kingSquare.y)!;
+            rightCastleBlocked = Boolean(currSquare.piece) || Boolean(currSquare.targetedBy[colour === 'black' ? 'white' : 'black'].find(move => !move.moveOnly && [...move.blockedBy.black, ...move.blockedBy.white].length === 0));
+        }
+        
+        //Return if neither castle is valid
+        if (leftCastleBlocked && rightCastleBlocked) {return [] }
+
+        const moves: TargetingSquare[] = [];
+        if (!leftCastleBlocked) {
+            moves.push({
+                target: kingSquare.id,
+                source: leftCastlingSquare.id,
+                moveable: true,
+                capture: false,
+                moveOnly: true,
+                castling: true,
+                path: [colour === 'white' ? 'D1' : 'D8'],
+                blockedBy: {
+                    black: [],
+                    white: []
+                }
+            },{
+                target: leftCastlingSquare.id,
+                source: kingSquare.id,
+                moveable: true,
+                capture: false,
+                moveOnly: true,
+                castling: true,
+                path: [colour === 'white' ? 'C1' : 'C8'],
+                blockedBy: {
+                    black: [],
+                    white: []
+                }
+            })
+        }
+
+        if (!rightCastleBlocked) {
+            moves.push({
+                target: kingSquare.id,
+                source: rightCastlingSquare.id,
+                moveable: true,
+                capture: false,
+                moveOnly: true,
+                castling: true,
+                path: [colour === 'white' ? 'F1' : 'F8'],
+                blockedBy: {
+                    black: [],
+                    white: []
+                }
+            },{
+                target: rightCastlingSquare.id,
+                source: kingSquare.id,
+                moveable: true,
+                capture: false,
+                moveOnly: true,
+                castling: true,
+                path: [colour === 'white' ? 'G1' : 'G8'],
+                blockedBy: {
+                    black: [],
+                    white: []
+                }
+            })
+        };
+
+        return moves;
     }
 
     //This function returns all valid squares that don't open a check & prevent all current checks
