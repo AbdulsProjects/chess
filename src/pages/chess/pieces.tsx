@@ -1,6 +1,6 @@
 //Piece movement is designed like this to allow for custom pieces to be created by the user in the future
 
-interface Piece {
+export interface Piece {
     id: string,
     name: string,
     points: number,

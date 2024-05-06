@@ -1,6 +1,6 @@
 import "./style.css"
 import React, { useEffect, useRef, useState } from 'react'
-import definedPieces from "./pieces"
+import definedPieces, { Piece } from "./pieces"
 import { Promotion } from "./promotion"
 
 //THINGS TO DO
@@ -18,6 +18,9 @@ import { Promotion } from "./promotion"
 //An error is thrown if trying to start a game without 2 kings. prevent game from starting in this case
 //Only allow 1 king to be added or allow for multiple kings (need to change how we find the king's index in that case, as this only works with 1 king)
 
+//Look at communalising the function used to remove old moves (currently used when promoting a piece / moving a piece)
+
+//Look at preventing the double-calculating that's done when moving a promotable piece to the end of the board (at the moment it calculates after moving the piece, then again after promoting)
 
 export function Chess() {
 
@@ -164,6 +167,39 @@ export function Chess() {
         }
 
     }, [board])
+
+    //Used to promote a piece
+    const PromotePiece = (newPiece: Piece) => {
+        
+        //Grabbing the piece to promote
+        const promotionSquareId = gameState.promotions.white.length > 0 ? gameState.promotions.white[0] : gameState.promotions.black[0];
+        const promotionSquare = boardRef.current.find(square => square.id === promotionSquareId)!;
+
+        //Removing the piece
+        let newBoard = RemovePiece(boardRef.current, promotionSquareId);
+
+        //Adding in the new piece
+        newBoard = AddPiece(newBoard, [{squareId: promotionSquareId, pieceId: newPiece.id, colour: (promotionSquare.colour as 'black' | 'white')}]);
+        
+        //Updating the possible moves for newly empty square / the targeted squares
+        for (let i = 0; i < promotionSquare.targeting.length; i++) {
+            const targetSquareIndex = newBoard.findIndex(square => square.id === promotionSquare.targeting[i].target);
+            const targetMoveIndex = newBoard[targetSquareIndex].targetedBy[promotionSquare.colour!].findIndex(move => move.source === promotionSquare.id);
+            newBoard[targetSquareIndex].targetedBy[promotionSquare.colour!].splice(targetMoveIndex, 1);
+        }            
+        const promotionSquareIndex = newBoard.findIndex(square => square.id === promotionSquareId);
+        newBoard[promotionSquareIndex].targeting = [];
+
+        //Updating the possible moves for the moved to square
+        const moves = ReturnPieceMoves(newBoard, newBoard[promotionSquareIndex]);
+        MutateBoardWithMoves(newBoard, moves, promotionSquareId);
+
+        //Calculating the possible moves for the next player's next turn if this was the last promotion (may not be the last promotion when the game is started)
+        if (gameState.promotions.white.length + gameState.promotions.black.length <= 1) { newBoard = CalculateMoves(newBoard, promotionSquare.colour === 'white' ? 'black' : 'white'); }
+
+        //Updating state
+        setBoardAndHtml(newBoard);
+    }
 
     //General Functions
 
@@ -541,7 +577,6 @@ export function Chess() {
 
             //Repeating the movement for repeatable patterns
             for (let i = 0; i < direction.range; i++) {
-                
                 if (direction.firstMoveOnly && !square.firstTurn) { continue; }
 
                 result.currentIteration.moveOnly = direction.moveOnly ? true : false;
@@ -563,11 +598,13 @@ export function Chess() {
                     }
 
                     //Adding the current step's square to the path array if the path doesn't already include the opposing king's square. This is to calculate what squares block check
+                    //THIS IS MUTATING THE PATH. THINK IT'S BECAUSE IT'S A POINTER NOT A PRIMATIVE TYPE
                     if (!result.currentIteration.path.find(squareId => squareId === opposingKingSquare.id)) { result.currentIteration.path.push(stepTargetSquare.id) };
 
                     //Setting blocked = true if there is a piece on a square that isn't a capture square or if the piece is the same colour
                     if (stepTargetSquare!.piece !== null) {
                         //Appending the blocker to the blockedBy array
+                        //REVIEW THIS LINE, THE QUEEN MOVES SAY THEY@RE BLOCKED BY PIECES THAT ARE AFTER THE MOVE
                         if ((stepTargetSquare.piece !== 'king' || stepTargetSquare.colour === square.colour) && !result.currentIteration.blockedBy[stepTargetSquare.colour!].find(squareId => squareId === stepTargetSquare.id)) { result.currentIteration.blockedBy[stepTargetSquare.colour!].push(stepTargetSquare.id) }
                         if (index !== path.length - 1 || direction.moveOnly || stepTargetSquare!.colour === square.colour) {
                             result.currentIteration.blocked = true;
@@ -592,8 +629,11 @@ export function Chess() {
                     moveable: !result.currentIteration.blocked && (!direction.captureOnly || direction.captureOnly && result.currentIteration.capture) && (nonCheckSquares.length === 0 || Boolean(nonCheckSquares.find(squareId => squareId === destTargetSquare.id))),
                     capture: result.currentIteration.capture,
                     moveOnly: result.currentIteration.moveOnly,
-                    path: result.currentIteration.path,
-                    blockedBy: result.currentIteration.blockedBy
+                    path: [...result.currentIteration.path],
+                    blockedBy: {
+                        black: [...result.currentIteration.blockedBy.black],
+                        white: [...result.currentIteration.blockedBy.white]
+                    }
                 }
 
                 //Setting blocked for next iterations if the destination tile contains a piece
@@ -669,7 +709,9 @@ export function Chess() {
         return surroundingSquares
             .filter(currSquare => 
                 currSquare.targetedBy[square.colour === 'black' ? 'white' : 'black'].length === 0 
-                || !currSquare.targetedBy[square.colour === 'black' ? 'white' : 'black'].find(move => !move.moveOnly && move.blockedBy['black'].length + move.blockedBy['white'].length === 0)
+                //Checking if there's a move targetting the surrounding square
+                || !currSquare.targetedBy[square.colour === 'black' ? 'white' : 'black']
+                    .find(move => !move.moveOnly && [...move.blockedBy.black, ...move.blockedBy.white].filter(blocker => blocker !== currSquare.id).length === 0)
             )
             .map(square => square.id);
     }
@@ -692,7 +734,7 @@ export function Chess() {
 
     return (
         <div className="main-container" onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
-            {(gameState.promotions.white.length > 0 || gameState.promotions.black.length > 0) && gameState.inProgress && <Promotion />}
+            {(gameState.promotions.white.length > 0 || gameState.promotions.black.length > 0) && gameState.inProgress && <Promotion PromotePiece={PromotePiece}/>}
             <div className="chess-container">
                 <div className="y-labels">
                     {[...Array(8)].map((item, index) => 
