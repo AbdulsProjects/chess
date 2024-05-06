@@ -4,13 +4,13 @@ import React, { useEffect, useRef, useState } from 'react'
 
 export const Promotion = ({PromotePiece = (newPiece: Piece) => {}}) => {
 
-    const handlePromotion = () => {
-        PromotePiece(definedPieces.find(piece => piece.id === 'queen')!);
-    }
+    const possiblePromotions = definedPieces.filter(piece => piece.id !== 'king' && !piece.canPromote)
 
     return (
         <div className="promotion-container">
-            <button onClick={handlePromotion}>Promote To Queen</button>
+            {possiblePromotions.map(piece => 
+                <button onClick={() => PromotePiece(piece)}>Promote to {piece.name}</button>
+            )}
         </div>
     )
 }
