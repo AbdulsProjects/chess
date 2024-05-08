@@ -314,6 +314,21 @@ export function Chess() {
         return newBoard
     }
 
+    const CastlePiece = (prevBoard: Square[], move: TargetingSquare, colour: 'black' | 'white'): Square[] => {
+        
+        //Grabbing and assigning the piece Ids
+        const rank = colour === 'black' ? 8 : 1;
+        const kingSquareId = 'E' + rank;
+        const castlingPieceId = move.target === kingSquareId ? move.source : move.target;
+
+        const kingSquareDest: string = (castlingPieceId[0] === 'A' ? 'C' : 'G') + rank;
+        const castlingingPieceDest: string = (castlingPieceId[0] === 'A' ? 'D' : 'F') + rank;
+
+        let newBoard = MovePiece(prevBoard, kingSquareId, kingSquareDest);
+        newBoard = MovePiece(newBoard, castlingPieceId, castlingingPieceDest);
+
+        return newBoard;
+    }
 
     const ClearBoard = (): Square[] => {
 
@@ -378,11 +393,16 @@ export function Chess() {
 
             //Returning if trying to move to an invalid square
             const targeting = currentSquare.targeting;
-            const moveable = targeting.find(targettingSquares => targettingSquares.target === targetSquare.id)?.moveable;
-            if (!moveable) {return}
+            const move = targeting.find(targettingSquares => targettingSquares.target === targetSquare.id && targettingSquares.moveable);
+            if (!move) {return}
 
+            let newBoard: Square[] = [];
             //Moving the piece
-            let newBoard = MovePiece(boardRef.current, sourceSquareId, targetSquare.id);
+            if (move.castling) {
+                newBoard = CastlePiece(boardRef.current, move, colour);
+            } else {
+                newBoard = MovePiece(boardRef.current, sourceSquareId, targetSquare.id);
+            }
             
             //Updating the state / HTML
             setBoardAndHtml(newBoard);    
