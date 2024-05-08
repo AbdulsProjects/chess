@@ -499,9 +499,10 @@ export function Chess() {
 
         //Updating the HTML to indicate targettable squares
         squareObj.targeting.map((move: TargetingSquare) => {
-                const targetElement = document.getElementById(move.target);
-                move!.capture && move!.moveable && targetElement!.classList.add("highlight-capture");
-                !move!.capture && move!.moveable && targetElement!.classList.add("highlight-move");
+                const targetElement = document.getElementById(move.target)!;
+                move.capture && move.moveable && targetElement.classList.add("highlight-capture");
+                move.castling && targetElement.classList.add("highlight-castling");
+                !move.capture && !move.castling && move.moveable && targetElement.classList.add("highlight-move");
         });
 
     }
@@ -513,6 +514,7 @@ export function Chess() {
             squares[i].classList.remove("highlight-select");
             squares[i].classList.remove("highlight-move");
             squares[i].classList.remove("highlight-capture");
+            squares[i].classList.remove("highlight-castling");
         }
     }
 
@@ -549,8 +551,11 @@ export function Chess() {
             MutateBoardWithMoves(newBoard, moves, square.id);
         })
 
-        //Calculating castling moves
-        ReturnCastlingMoves(board, colour);
+        //Calculating castling moves and updating the board with the returned moves
+        const castleMoves = ReturnCastlingMoves(board, colour);
+        for (const [key, value] of Object.entries(castleMoves)) {
+            MutateBoardWithMoves(newBoard, value, key, true);
+        }
 
         return newBoard;
     };
@@ -670,7 +675,7 @@ export function Chess() {
 
     }
 
-    const ReturnCastlingMoves = (board: Square[], colour: keyof Target): TargetingSquare[] => {
+    const ReturnCastlingMoves = (board: Square[], colour: keyof Target): {[key: string]: TargetingSquare[]} | [] => {
         //Castling is only allowed if:
         //1) The king / castling piece start in the correct places
         //2) The king / castling piece haven't moved yet
@@ -689,7 +694,7 @@ export function Chess() {
         const rightCastlingPiece = definedPieces.find(piece => piece.id === rightCastlingSquare.piece);
 
         //Return if the king is currently in check
-        if (kingSquare.targetedBy[colour === 'black' ? 'white' : 'black'].find(move => !move.moveOnly && [...move.blockedBy.black, ...move.blockedBy.white].length === 0)) { return[] }
+        if (kingSquare.targetedBy[colour === 'black' ? 'white' : 'black'].find(move => !move.moveOnly && [...move.blockedBy.black, ...move.blockedBy.white].length === 0)) { return [] }
 
         //Checking if the left castle is a valid move
         let leftCastleBlocked: Boolean = !leftCastlingPiece || !leftCastlingPiece.canCastle || !leftCastlingSquare.firstTurn;
@@ -712,9 +717,9 @@ export function Chess() {
         //Return if neither castle is valid
         if (leftCastleBlocked && rightCastleBlocked) {return [] }
 
-        const moves: TargetingSquare[] = [];
+        const moves: {[key: string]: TargetingSquare[]} = {};
         if (!leftCastleBlocked) {
-            moves.push({
+            moves[leftCastlingSquare.id] = [{
                 target: kingSquare.id,
                 source: leftCastlingSquare.id,
                 moveable: true,
@@ -726,7 +731,8 @@ export function Chess() {
                     black: [],
                     white: []
                 }
-            },{
+            }];
+            moves[kingSquare.id] = [{
                 target: leftCastlingSquare.id,
                 source: kingSquare.id,
                 moveable: true,
@@ -738,11 +744,11 @@ export function Chess() {
                     black: [],
                     white: []
                 }
-            })
+            }]
         }
 
         if (!rightCastleBlocked) {
-            moves.push({
+            moves[rightCastlingSquare.id] = [{
                 target: kingSquare.id,
                 source: rightCastlingSquare.id,
                 moveable: true,
@@ -754,7 +760,10 @@ export function Chess() {
                     black: [],
                     white: []
                 }
-            },{
+            }];
+
+            //The king key may already be populated, so may have to push instead of assigning directly
+            const kingRightCastleMove = {
                 target: rightCastlingSquare.id,
                 source: kingSquare.id,
                 moveable: true,
@@ -766,7 +775,13 @@ export function Chess() {
                     black: [],
                     white: []
                 }
-            })
+            }
+            if (kingSquare.id in moves) {
+                moves[kingSquare.id].push(kingRightCastleMove)
+            } else {
+                moves[kingSquare.id] = [kingRightCastleMove];
+            }
+            
         };
 
         return moves;
@@ -836,13 +851,17 @@ export function Chess() {
     }
 
     //This is a function used to mutate the board passed, adding the moves to the correct squares
-    const MutateBoardWithMoves = (board: Square[], moves: TargetingSquare[], sourceSquareId: string) => {
+    const MutateBoardWithMoves = (board: Square[], moves: TargetingSquare[], sourceSquareId: string, appendMove = false) => {
 
         const colour = board.find(square => square.id === sourceSquareId)!.colour;
         
         //Updating the current square with the moves
         const index = board.findIndex(currSquare => currSquare.id === sourceSquareId);
-        board[index].targeting = moves;
+        if (appendMove) {
+            board[index].targeting = [...board[index].targeting, ...moves];
+        } else {
+            board[index].targeting = moves;
+        }
 
         //Updating the targetted squares with the moves
         for (let i = 0; i < moves.length; i++) {

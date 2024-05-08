@@ -90,3 +90,8 @@ button {
 .highlight-promote {
     background-color: yellow;
 }
+
+.highlight-castling {
+    border: 5px solid rgb(11, 178, 255);
+    /* background-color: rgb(162, 213, 236); */
+}
