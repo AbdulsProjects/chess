@@ -22,6 +22,10 @@ import { Promotion } from "./promotion"
 
 //Look at preventing the double-calculating that's done when moving a promotable piece to the end of the board (at the moment it calculates after moving the piece, then again after promoting)
 
+//CURRENT ISSUES WITH CHECKMATE CHECKER
+//Says stalemate when it's not the player's turn
+//Doesn't end the game when black starts in check (white's turn and there's a check)
+
 export function Chess() {
 
     //Setting up the state
@@ -64,6 +68,10 @@ export function Chess() {
 
     interface GameState {
         inProgress: boolean,
+        outcome: {
+            winner: 'black' | 'white' | null
+            staleMate: boolean
+        }
         currentPlayer: 'black' | 'white',
         promotions: {
             black: string[];
@@ -92,6 +100,10 @@ export function Chess() {
     const [board, setBoard] = useState<Square[]>([]);
     const [gameState, setGameState] = useState<GameState>({
         inProgress: false,
+        outcome: {
+            winner: null,
+            staleMate: false
+        },
         currentPlayer: 'white',
         promotions: {
             black: [],
@@ -196,7 +208,7 @@ export function Chess() {
         MutateBoardWithMoves(newBoard, moves, promotionSquareId);
 
         //Calculating the possible moves for the next player's next turn if this was the last promotion (may not be the last promotion when the game is started)
-        if (gameState.promotions.white.length + gameState.promotions.black.length <= 1) { newBoard = CalculateMoves(newBoard, promotionSquare.colour === 'white' ? 'black' : 'white'); }
+        if (gameState.promotions.white.length + gameState.promotions.black.length <= 1) { newBoard = CalculatePlayerMoves(newBoard, promotionSquare.colour === 'white' ? 'black' : 'white'); }
 
         //Updating state
         setBoardAndHtml(newBoard);
@@ -295,21 +307,8 @@ export function Chess() {
         let newBoard = RemovePiece(prevBoard, oldSquareId);
         newBoard = AddPiece(newBoard, [{squareId: newSquareId, pieceId: piece, colour: colour}]);
         
-        //Updating the possible moves for newly empty square / the targeted squares
-        for (let i = 0; i < oldSquare.targeting.length; i++) {
-            const targetSquareIndex = newBoard.findIndex(square => square.id === oldSquare.targeting[i].target);
-            const targetMoveIndex = newBoard[targetSquareIndex].targetedBy[oldSquare.colour!].findIndex(move => move.source === oldSquare.id);
-            newBoard[targetSquareIndex].targetedBy[oldSquare.colour!].splice(targetMoveIndex, 1);
-        }            
-        const sourceSquareIndex = newBoard.findIndex(square => square.id === oldSquareId);
-        newBoard[sourceSquareIndex].targeting = [];
-
-        //Updating the possible moves for the moved to square
-        const moves = ReturnPieceMoves(newBoard, newBoard.find(square => square.id === newSquareId)!);
-        MutateBoardWithMoves(newBoard, moves, newSquareId);
-
-        //Calculating the possible moves for the next player's next turn
-        newBoard = CalculateMoves(newBoard, colour === 'white' ? 'black' : 'white');
+        //Recalculating possible moves
+        newBoard = RecalculateAllMoves(newBoard, colour);
         
         return newBoard
     }
@@ -340,18 +339,16 @@ export function Chess() {
         return(newBoard);
     }
 
-    const CheckForLoss = (board: Square[], colour: 'black' | 'white') => {
+    const CheckForLoss = (board: Square[], colour: 'black' | 'white'): boolean => {
 
         //Removing the previous check / check mate styling
-        const previousCheckElements = document.getElementsByClassName('highlight-check');
-        for (let i = 0; i < previousCheckElements.length; i++) {
-            previousCheckElements[i].classList.remove("highlight-check");
-        }
+        Array.from(document.querySelectorAll('.highlight-check')).forEach(
+            square => square.classList.remove('highlight-check')
+        );
 
-        const previousCheckMateElements = document.getElementsByClassName('highlight-check-mate');
-        for (let i = 0; i < previousCheckMateElements.length; i++) {
-            previousCheckMateElements[i].classList.remove("highlight-check-mate");
-        }
+        Array.from(document.querySelectorAll('.highlight-check-mate')).forEach(
+            square => square.classList.remove('highlight-check-mate')
+        );
 
         const pieces = board.filter(square => square.colour === colour);
         const validMove = Boolean(pieces.find(square => square.targeting.find(move => move.moveable)));
@@ -359,19 +356,57 @@ export function Chess() {
         const checkMoves = ReturnCheckMoves(kingSquare);
 
         if (checkMoves.length !== 0 && !validMove) { 
-            document.getElementById(kingSquare.id)!.classList.add("highlight-check-mate");
-            const checkMate = true;
-            return
-        }
-        
-        if (checkMoves.length !== 0 && validMove) { 
-            document.getElementById(kingSquare.id)!.classList.add("highlight-check");
-            const check = true; 
+            document.getElementById(kingSquare.id)!.classList.add('highlight-check-mate');
+            
+            setGameState(prevState => ({
+                ...prevState,
+                outcome: {
+                    winner: colour === 'black' ? 'white' : 'black',
+                    staleMate: false
+                }
+            }));
+
+            return true
         }
         
         if (checkMoves.length === 0 && !validMove) { 
-            const staleMate = true; 
+
+            //Black can't start in stale mate as it's white's turn to begin with
+            if (gameState.inProgress || colour === 'white') {
+                setGameState(prevState => ({
+                    ...prevState,
+                    outcome: {
+                        winner: null,
+                        staleMate: true
+                    }
+                }));
+
+                return true
+            }
         }
+
+        if (checkMoves.length !== 0 && validMove) { 
+            document.getElementById(kingSquare.id)!.classList.add('highlight-check');
+            for (let i = 0; i < checkMoves.length; i++) {
+                const targetingSquare = document.getElementById(checkMoves[i].source)!;
+                if (!targetingSquare.classList.contains('highlight-check')) { targetingSquare.classList.add('highlight-check') }
+            }
+
+            //White wins if black starts in check
+            if (!gameState.inProgress && colour === 'black') {
+                setGameState(prevState => ({
+                    ...prevState,
+                    outcome: {
+                        winner: 'white',
+                        staleMate: false
+                    }
+                }));
+
+                return true
+            }
+        }
+
+        return false
         
     }
 
@@ -381,7 +416,7 @@ export function Chess() {
 
     //Returning a boolean to specify if the interactivity should be disabled
     const DisableInteractivity = (): boolean => {
-        return gameStateRef.current.promotions.black.length > 0 || gameStateRef.current.promotions.white.length > 0;
+        return gameStateRef.current.promotions.black.length > 0 || gameStateRef.current.promotions.white.length > 0 || gameStateRef.current.outcome.staleMate || Boolean(gameStateRef.current.outcome.winner);
     }
 
     //Event Handlers
@@ -525,14 +560,14 @@ export function Chess() {
         }
 
         //Calculating possible moves. Needs to be ran 3 times as one colour's moves can affect the others due to checks
-        let newBoard = CalculateMoves(boardRef.current, 'black');
-        newBoard = CalculateMoves(newBoard, 'white');
-        newBoard = CalculateMoves(newBoard, 'black');
+        let newBoard = CalculatePlayerMoves(boardRef.current, 'black');
+        newBoard = CalculatePlayerMoves(newBoard, 'white');
+        newBoard = CalculatePlayerMoves(newBoard, 'black');
         setBoard(newBoard);
 
         //Checking for immediate checks / check mates
-        CheckForLoss(newBoard, 'white');
-        CheckForLoss(newBoard, 'black');
+        if (CheckForLoss(newBoard, 'white')) { return };
+        if (CheckForLoss(newBoard, 'black')) { return };
 
         //Updating state
         setGameState(prevState => ({
@@ -585,7 +620,7 @@ export function Chess() {
     }
 
     //Returning all possible moves
-    const CalculateMoves = (board: Square[], colour: keyof Target): Square[] => {
+    const CalculatePlayerMoves = (board: Square[], colour: 'black' | 'white'): Square[] => {
         
         //Removing the last set of calculations for the passed colour
         const newBoard: Square[] = board.map((square) => {
@@ -625,6 +660,13 @@ export function Chess() {
 
         return newBoard;
     };
+
+    //Recalculating all viable moves. The colour order matters as the most recently moved piece may affect checks / check mates
+    const RecalculateAllMoves = (board: Square[], prevColour: 'black' | 'white'): Square[] => {
+        let newBoard = CalculatePlayerMoves(board, prevColour);
+        newBoard = CalculatePlayerMoves(newBoard, prevColour === 'black' ? 'white' : 'black');
+        return newBoard
+    }
 
     //This function takes a square and board to return an array of all possible moves. Returns a targetingSquare array instead of a new board to reduce memory/performance cost of initialising new boards
     const ReturnPieceMoves = (board: Square[], square: Square):  TargetingSquare[] => {
@@ -942,6 +984,8 @@ export function Chess() {
 
     return (
         <div className="main-container" onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
+            {gameState.outcome.winner && <p>The winner is {gameState.outcome.winner}</p>}
+            {gameState.outcome.staleMate && <p>Stalemate!!!</p>}
             {(gameState.promotions.white.length > 0 || gameState.promotions.black.length > 0) && gameState.inProgress && <Promotion PromotePiece={PromotePiece}/>}
             <div className="chess-container">
                 <div className="y-labels">
