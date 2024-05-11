@@ -340,39 +340,39 @@ export function Chess() {
         return(newBoard);
     }
 
-    const CheckForLoss = (board: Square[], colour: 'black' | 'white'): {
-        colour: 'white' | 'black',
-        check: boolean,
-        checkMate: boolean,
-        staleMate: boolean,
-        checkMoves: TargetingSquare[]
-    } => {
+    const CheckForLoss = (board: Square[], colour: 'black' | 'white') => {
 
-        const result = {
-            colour: colour,
-            check: false,
-            checkMate: false,
-            staleMate: false,
-            checkMoves: [] as TargetingSquare[]
+        //Removing the previous check / check mate styling
+        const previousCheckElements = document.getElementsByClassName('highlight-check');
+        for (let i = 0; i < previousCheckElements.length; i++) {
+            previousCheckElements[i].classList.remove("highlight-check");
+        }
+
+        const previousCheckMateElements = document.getElementsByClassName('highlight-check-mate');
+        for (let i = 0; i < previousCheckMateElements.length; i++) {
+            previousCheckMateElements[i].classList.remove("highlight-check-mate");
         }
 
         const pieces = board.filter(square => square.colour === colour);
         const validMove = Boolean(pieces.find(square => square.targeting.find(move => move.moveable)));
-        result.checkMoves = ReturnCheckMoves(pieces.find(square => square.piece === 'king')!);
+        const kingSquare = pieces.find(square => square.piece === 'king')!;
+        const checkMoves = ReturnCheckMoves(kingSquare);
 
-        if (result.checkMoves.length !== 0 && !validMove) { 
-            result.checkMate = true;
-        }
-
-        if (result.checkMoves.length !== 0 && validMove) { 
-            result.check = true; 
+        if (checkMoves.length !== 0 && !validMove) { 
+            document.getElementById(kingSquare.id)!.classList.add("highlight-check-mate");
+            const checkMate = true;
+            return
         }
         
-        if (result.checkMoves.length === 0 && !validMove) { 
-            result.staleMate = true; 
+        if (checkMoves.length !== 0 && validMove) { 
+            document.getElementById(kingSquare.id)!.classList.add("highlight-check");
+            const check = true; 
         }
         
-        return result
+        if (checkMoves.length === 0 && !validMove) { 
+            const staleMate = true; 
+        }
+        
     }
 
     const ReturnCheckMoves = (king: Square): TargetingSquare[] => {

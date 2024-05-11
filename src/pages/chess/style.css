@@ -97,5 +97,9 @@ button {
 }
 
 .highlight-check-mate {
-    background-color: 5px solid red;
+    background-color: red;
+}
+
+.highlight-check {
+    background-color: orange;
 }
