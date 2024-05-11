@@ -340,6 +340,45 @@ export function Chess() {
         return(newBoard);
     }
 
+    const CheckForLoss = (board: Square[], colour: 'black' | 'white'): {
+        colour: 'white' | 'black',
+        check: boolean,
+        checkMate: boolean,
+        staleMate: boolean,
+        checkMoves: TargetingSquare[]
+    } => {
+
+        const result = {
+            colour: colour,
+            check: false,
+            checkMate: false,
+            staleMate: false,
+            checkMoves: [] as TargetingSquare[]
+        }
+
+        const pieces = board.filter(square => square.colour === colour);
+        const validMove = Boolean(pieces.find(square => square.targeting.find(move => move.moveable)));
+        result.checkMoves = ReturnCheckMoves(pieces.find(square => square.piece === 'king')!);
+
+        if (result.checkMoves.length !== 0 && !validMove) { 
+            result.checkMate = true;
+        }
+
+        if (result.checkMoves.length !== 0 && validMove) { 
+            result.check = true; 
+        }
+        
+        if (result.checkMoves.length === 0 && !validMove) { 
+            result.staleMate = true; 
+        }
+        
+        return result
+    }
+
+    const ReturnCheckMoves = (king: Square): TargetingSquare[] => {
+        return king.targetedBy[king.colour === 'black' ? 'white' : 'black'].filter(move => move.capture)
+    }
+
     //Returning a boolean to specify if the interactivity should be disabled
     const DisableInteractivity = (): boolean => {
         return gameStateRef.current.promotions.black.length > 0 || gameStateRef.current.promotions.white.length > 0;
@@ -411,6 +450,7 @@ export function Chess() {
                 ...prevState,
                 currentPlayer: prevState.currentPlayer === 'white' ? 'black' : 'white'
             }));
+            CheckForLoss(newBoard, colour === 'white' ? 'black' : 'white');
         } else {
             //Adding the piece
             setBoardAndHtml(AddPiece(boardRef.current, [{squareId: targetSquare.id, pieceId: piece, colour: colour}]));
@@ -476,7 +516,7 @@ export function Chess() {
 
     //Functions  to start / play the game
     const StartGame = () => {
-
+        
         //Updating the handlers of all pieces
         const pieces = document!.querySelectorAll('[id$=Piece]');//getElementsByClassName("piece");
         for (let i=0; i < pieces.length; i++) {
@@ -484,9 +524,15 @@ export function Chess() {
             pieces[i].addEventListener("dragstart", (e) => SelectPiece(e));
         }
 
-        //Calculating possible moves. Black is calculated to account for boards where black pieces are immediately targetting the white king, thus changing white's possible moves
-        const newBoard = CalculateMoves(boardRef.current, 'black');
-        setBoard(CalculateMoves(newBoard, 'white'));
+        //Calculating possible moves. Needs to be ran 3 times as one colour's moves can affect the others due to checks
+        let newBoard = CalculateMoves(boardRef.current, 'black');
+        newBoard = CalculateMoves(newBoard, 'white');
+        newBoard = CalculateMoves(newBoard, 'black');
+        setBoard(newBoard);
+
+        //Checking for immediate checks / check mates
+        CheckForLoss(newBoard, 'white');
+        CheckForLoss(newBoard, 'black');
 
         //Updating state
         setGameState(prevState => ({
@@ -539,7 +585,7 @@ export function Chess() {
     }
 
     //Returning all possible moves
-    const CalculateMoves = (board: Square[], colour: keyof Target) => {
+    const CalculateMoves = (board: Square[], colour: keyof Target): Square[] => {
         
         //Removing the last set of calculations for the passed colour
         const newBoard: Square[] = board.map((square) => {
@@ -593,9 +639,13 @@ export function Chess() {
 
         //Retrieving the opposing king's square for later use
         const opposingKingSquare = board.find(currSquare => currSquare.piece === 'king' && currSquare.colour !== square.colour)!;
+        const allyKingSquare = board.find(currSquare => currSquare.piece === 'king' && currSquare.colour === square.colour)!;
 
         //Returning all squares that prevent check / don't open up a new check
         const nonCheckSquares = ReturnSquaresThatPreventCheck(board, square);
+
+        //Early return if no moves block check and the king is currently in check / the player is attempting to move the king
+        if (nonCheckSquares.length === 0 && (ReturnCheckMoves(allyKingSquare).length !== 0 || square === allyKingSquare)) { return[] }
 
         const moves = pieceObj.movement.reduce((result: TargettableSquareReducer, direction) => {
 
@@ -714,7 +764,7 @@ export function Chess() {
         const rightCastlingPiece = definedPieces.find(piece => piece.id === rightCastlingSquare.piece);
 
         //Return if the king is currently in check
-        if (kingSquare.targetedBy[colour === 'black' ? 'white' : 'black'].find(move => !move.moveOnly && [...move.blockedBy.black, ...move.blockedBy.white].length === 0)) { return [] }
+        if (ReturnCheckMoves(kingSquare).length !== 0) { return [] }
 
         //Checking if the left castle is a valid move
         let leftCastleBlocked: Boolean = !leftCastlingPiece || !leftCastlingPiece.canCastle || !leftCastlingSquare.firstTurn;
