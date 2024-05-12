@@ -1,0 +1,12 @@
+.chess-game-over-container > p {
+    font-weight: bold;
+    font-size: 2rem;
+}
+
+.chess-game-over-container > p > a:visited {
+    color: black;
+}
+
+.chess-game-over-container > p > a:hover {
+    color: rgb(184, 178, 178);
+}

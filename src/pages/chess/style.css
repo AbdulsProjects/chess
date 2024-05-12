@@ -1,27 +1,36 @@
 .main-container {
-    display: flex;
-    height: 100vh;
-    width: 100vw;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(675px, 1fr));
+    grid-template-rows: 200px minmax(700px, calc(100vh - 300px));
+    height: calc(100vh - 50px);
+    background-color: #e2dbc8;
+}
+
+.top-mid-container {
+    align-self: flex-end;
+    justify-self: right;
+    grid-column: 2 / 3;
+    width: 600px;
 }
 
 .chess-container {
     display: grid;
     grid-template-columns: 75px 600px;
     grid-template-rows: 600px 75px;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    -webkit-transform: translate(-50%, -50%);
-    transform: translate(-50%, -50%);
+    align-self: center; 
+    justify-self: right;
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
 }
 
 .chess-board {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
+    grid-template-columns: repeat(8, 73.89px);
+    grid-template-rows: repeat(8, 73.89px);
     height: 600px;
     width: 600px;
     grid-area: 1 / 2 / 2 / 3;
+    border: 5px solid var(--dark-brown);
 }
 
 .y-labels {
@@ -47,13 +56,13 @@
 }
 
 .light-square {
-    background-color: rgb(227,193,111);
-    border: 5px solid rgb(227,193,111);
+    background-color: var(--light-square);
+    border: 5px solid var(--light-square);
 }
 
 .dark-square {
-    background-color: rgb(184,139,74);
-    border: 5px solid rgb(184,139,74);
+    background-color: var(--dark-square);
+    border: 5px solid var(--dark-square);
 }
 
 .square {
@@ -76,7 +85,7 @@ button {
 }
 
 .highlight-select {
-    border: 5px solid yellow;
+    border: 5px solid yellow !important;
 }
 
 .highlight-move {
@@ -84,7 +93,7 @@ button {
 }
 
 .highlight-capture {
-    border: 5px solid red;
+    border: 5px solid red !important; 
 }
 
 .highlight-promote {
@@ -97,9 +106,11 @@ button {
 }
 
 .highlight-check-mate {
-    background-color: red;
+    background-color: rgb(247, 113, 113);
+    border: 5px solid red;
 }
 
 .highlight-check {
-    background-color: orange;
+    background-color: rgb(255, 189, 67);
+    border: 5px solid orange;
 }

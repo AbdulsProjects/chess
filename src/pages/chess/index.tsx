@@ -2,6 +2,9 @@ import "./style.css"
 import React, { useEffect, useRef, useState } from 'react'
 import definedPieces, { Piece } from "./pieces"
 import { Promotion } from "./promotion"
+import { GameOver } from "./game-over"
+import { PreGame } from "./pre-game"
+import { NavBar } from "../navbar"
 
 //THINGS TO DO
 //Split the drop handler for on / off board
@@ -25,6 +28,11 @@ import { Promotion } from "./promotion"
 //CURRENT ISSUES WITH CHECKMATE CHECKER
 //Says stalemate when it's not the player's turn
 //Doesn't end the game when black starts in check (white's turn and there's a check)
+
+export interface GameOutcome {
+    winner: 'black' | 'white' | null
+    staleMate: boolean
+}
 
 export function Chess() {
 
@@ -68,10 +76,7 @@ export function Chess() {
 
     interface GameState {
         inProgress: boolean,
-        outcome: {
-            winner: 'black' | 'white' | null
-            staleMate: boolean
-        }
+        outcome: GameOutcome,
         currentPlayer: 'black' | 'white',
         promotions: {
             black: string[];
@@ -307,6 +312,9 @@ export function Chess() {
         let newBoard = RemovePiece(prevBoard, oldSquareId);
         newBoard = AddPiece(newBoard, [{squareId: newSquareId, pieceId: piece, colour: colour}]);
         
+        //Removing the targetted by array for the moved to square (this is recalculated in RecalculateAllMoves)
+        newBoard.find(square => square.id === newSquareId)!.targetedBy[colour] = [];
+
         //Recalculating possible moves
         newBoard = RecalculateAllMoves(newBoard, colour);
         
@@ -552,6 +560,14 @@ export function Chess() {
     //Functions  to start / play the game
     const StartGame = () => {
         
+        //Exitting early if there isn't a king of both colours / there are multiple kings of the same colour
+        const whiteKings = board.filter(square => square.piece === 'king' && square.colour === 'white');
+        const blackKings = board.filter(square => square.piece === 'king' && square.colour === 'black');
+        if (blackKings.length + whiteKings.length !== 2 || !blackKings.length || !whiteKings.length) {
+            alert('Each player must have exactly 1 king to start a game');
+            return
+        }
+
         //Updating the handlers of all pieces
         const pieces = document!.querySelectorAll('[id$=Piece]');//getElementsByClassName("piece");
         for (let i=0; i < pieces.length; i++) {
@@ -622,9 +638,9 @@ export function Chess() {
     //Returning all possible moves
     const CalculatePlayerMoves = (board: Square[], colour: 'black' | 'white'): Square[] => {
         
-        //Removing the last set of calculations for the passed colour
+        //Removing the last set of calculations for the passed colour. Or clause catches squares that have just had a piece move off
         const newBoard: Square[] = board.map((square) => {
-            if (square.colour === colour) {
+            if (square.colour === colour || square.colour === null) {
                 return {
                     ...square,
                     targeting: []
@@ -983,44 +999,33 @@ export function Chess() {
     }
 
     return (
-        <div className="main-container" onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
-            {gameState.outcome.winner && <p>The winner is {gameState.outcome.winner}</p>}
-            {gameState.outcome.staleMate && <p>Stalemate!!!</p>}
-            {(gameState.promotions.white.length > 0 || gameState.promotions.black.length > 0) && gameState.inProgress && <Promotion PromotePiece={PromotePiece}/>}
-            <div className="chess-container">
-                <div className="y-labels">
-                    {[...Array(8)].map((item, index) => 
-                        <p>{8 - index}</p>
-                    )}
-                </div>
-                <div className="x-labels">
-                    {[...Array(8)].map((item, index) => 
-                        <p>{String.fromCharCode(index + 65)}</p>
-                    )}
-                </div>
-                <div className='chess-board'>
-                    {board.map((square) => {
-                        const altRow = (square.id.charCodeAt(0) + Number(square.id[1])) % 2;
-                        return <div id={square.id} className={`square ${altRow ? "light-square": "dark-square"}`} onDrop={(e) => DropPiece(e)} onDragOver={HoverPiece} onDragStart={DivPreventDefault}></div>
-                    }
-                    )}
+        <>
+            <NavBar />
+            <div className="main-container" onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
+                {(gameState.outcome.winner || gameState.outcome.staleMate) && <GameOver outcome={gameState.outcome}/>}
+                {(!gameState.inProgress && !(gameState.outcome.winner || gameState.outcome.staleMate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} />}
+                {(gameState.promotions.white.length > 0 || gameState.promotions.black.length > 0) && gameState.inProgress && <Promotion PromotePiece={PromotePiece} colour={gameState.promotions.white.length > 0 ? 'white' : 'black'}/>}
+                <div className="chess-container">
+                    <div className="y-labels">
+                        {[...Array(8)].map((item, index) => 
+                            <p>{8 - index}</p>
+                        )}
+                    </div>
+                    <div className="x-labels">
+                        {[...Array(8)].map((item, index) => 
+                            <p>{String.fromCharCode(index + 65)}</p>
+                        )}
+                    </div>
+                    <div className='chess-board'>
+                        {board.map((square) => {
+                            const altRow = (square.id.charCodeAt(0) + Number(square.id[1])) % 2;
+                            return <div id={square.id} className={`square ${altRow ? 'light-square': 'dark-square'}`} onDrop={(e) => DropPiece(e)} onDragOver={HoverPiece} onDragStart={DivPreventDefault}></div>
+                        }
+                        )}
+                    </div>
                 </div>
             </div>
-            <img src="img/white_pawn.png" id="white pawn" alt="white pawn" onDragStart={(e) => DragPiece(e, "white", "pawn")}/>
-            <img src="img/white_rook.png" id="white rook" alt="white rook" onDragStart={(e) => DragPiece(e, "white", "rook")}/>
-            <img src="img/white_knight.png" id="white knight" alt="white knight" onDragStart={(e) => DragPiece(e, "white", "knight")}/>
-            <img src="img/white_bishop.png" id="white bishop" alt="white bishop" onDragStart={(e) => DragPiece(e, "white", "bishop")}/>
-            <img src="img/white_queen.png" id="white queen" alt="white queen" onDragStart={(e) => DragPiece(e, "white", "queen")}/>
-            <img src="img/white_king.png" id="white king" alt="white king" onDragStart={(e) => DragPiece(e, "white", "king")}/>
-            <img src="img/black_pawn.png" id="black pawn" alt="black pawn" onDragStart={(e) => DragPiece(e, "black", "pawn")}/>
-            <img src="img/black_rook.png" id="black rook" alt="black rook" onDragStart={(e) => DragPiece(e, "black", "rook")}/>
-            <img src="img/black_knight.png" id="black knight" alt="black knight" onDragStart={(e) => DragPiece(e, "black", "knight")}/>
-            <img src="img/black_bishop.png" id="black bishop" alt="black bishop" onDragStart={(e) => DragPiece(e, "black", "bishop")}/>
-            <img src="img/black_queen.png" id="black queen" alt="black queen" onDragStart={(e) => DragPiece(e, "black", "queen")}/>
-            <img src="img/black_king.png" id="black king" alt="black king" onDragStart={(e) => DragPiece(e, "black", "king")}/>
-            <button onClick={StartGame}>Start Game</button>
-            <button onClick={StandardGame}>Standard Game</button>
-        </div>
+        </>
     )
 }
 

@@ -1,5 +1,8 @@
 .promotion-container {
-    background-color: black;
-    size: 200px;
-    width: 200px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border: 5px solid var(--dark-brown);
+    background-color: #d6b25ca6;
+    height: 100px;
+    white-space: nowrap;
 }

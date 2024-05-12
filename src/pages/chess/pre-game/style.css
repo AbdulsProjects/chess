@@ -1,0 +1,41 @@
+.pre-game-container {
+    display: grid;
+    grid-template-columns: 8fr 2fr;
+}
+
+.pre-game-tray {
+    background-color: #d6b25ca6;
+    height: 160px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border: 5px solid var(--dark-brown);
+}
+
+.pre-game-piece-container {
+    max-height: 80px;
+    white-space: nowrap;
+}
+
+.pre-game-button-container {
+    background-color: var(--dark-square);
+    border: 5px solid var(--dark-brown);
+    border-left: none;
+    display: flex;
+    flex-direction: column;
+    padding: 3px 0;
+}
+
+.pre-game-button-container > button {
+    width: 100%;
+    background-color: var(--light-square);
+    cursor: pointer;
+    margin-top: 3px;
+}
+
+.pre-game-button-container > button:hover {
+    background-color: var(--light-square-hover);
+}
+
+#chess-start-button {
+    margin-top: auto;
+}
