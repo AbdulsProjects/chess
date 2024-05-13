@@ -1,0 +1,62 @@
+.captured-pieces-main-container {
+    background-color: var(--light-square);
+    border: 5px solid var(--dark-brown);
+    height: 600px;
+    width: 50%;
+    grid-row: 2 / 3;
+    align-self: center;
+    /* This margin is the height of the x labels on the chess board */
+    margin-bottom: 75px;
+    white-space: nowrap;
+    overflow: auto;
+}
+
+.captured-pieces-main-container-left {
+    justify-self: right;
+}
+
+.captured-pieces-main-container-right {
+    justify-self: left;
+    margin-left: 65px;
+}
+
+.captured-pieces-header {
+    background-color: var(--dark-square);
+    padding: 5px 0 2px 5px;
+    padding-top: 5px;
+    padding-bottom: 2px;
+    border-bottom: 5px solid var(--dark-brown);
+    position: sticky;
+    top: 0;
+}
+
+.captured-pieces-header > h3 {
+    padding: 0;
+    margin: 0;
+}
+
+.captured-pieces-list-container {
+    display: grid;
+    grid-template-columns: 9fr 50px minmax(auto, 30px);
+}
+.captured-pieces-piece-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 12px);
+    max-width: 100%;
+    border-bottom: 1px solid var(--dark-brown);
+}
+
+.captured-pieces-piece-container > * {
+    margin-right: -55px;
+}
+
+.captured-piece-count-container {
+    align-self: center;
+    height: 100%;
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    border-bottom: 1px solid var(--dark-brown);
+    grid-column: 2 / 4;
+    padding-right: 10px;
+}

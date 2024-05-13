@@ -5,6 +5,10 @@
   --dark-square: #b88a4a;
 }
 
+#root {
+  min-width: 1575px;
+}
+
 * {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box; 

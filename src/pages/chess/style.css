@@ -1,6 +1,6 @@
 .main-container {
     display: grid;
-    grid-template-columns: repeat(3, minmax(675px, 1fr));
+    grid-template-columns: minmax(450px, 1fr) 675px minmax(450px, 1fr);
     grid-template-rows: 200px minmax(700px, calc(100vh - 300px));
     height: calc(100vh - 50px);
     background-color: #e2dbc8;

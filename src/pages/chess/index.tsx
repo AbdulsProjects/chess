@@ -5,6 +5,7 @@ import { Promotion } from "./promotion"
 import { GameOver } from "./game-over"
 import { PreGame } from "./pre-game"
 import { NavBar } from "../navbar"
+import { CapturedPieces } from "./captured-pieces"
 
 //THINGS TO DO
 //Split the drop handler for on / off board
@@ -32,6 +33,11 @@ import { NavBar } from "../navbar"
 export interface GameOutcome {
     winner: 'black' | 'white' | null
     staleMate: boolean
+}
+
+export interface CapturedPiece {
+    piece: string,
+    number: number
 }
 
 export function Chess() {
@@ -81,6 +87,10 @@ export function Chess() {
         promotions: {
             black: string[];
             white: string[]
+        },
+        capturedPieces: {
+            black: CapturedPiece[],
+            white: CapturedPiece[]
         }
     }
 
@@ -113,6 +123,10 @@ export function Chess() {
         promotions: {
             black: [],
             white: []
+        },
+        capturedPieces: {
+            white: [],
+            black: []
         }
     })
 
@@ -261,7 +275,6 @@ export function Chess() {
     }
 
     const AddPiece = (prevBoard: Square[], pieces: PiecesToAdd[]): Square[] => {
-        //Updating state with the new piece
         
         //Generating the updated board
         const newBoard: Square[] = prevBoard.map((square: Square) => {
@@ -478,6 +491,24 @@ export function Chess() {
             const move = targeting.find(targettingSquares => targettingSquares.target === targetSquare.id && targettingSquares.moveable);
             if (!move) {return}
 
+            //Checking if there is a piece in the target square, and appending/updating captured squares if there is
+            const destSquare = board.find(square => square.id === move.target)!;
+            if (move.capture) {
+                if (!gameStateRef.current.capturedPieces[colour].find(piece => piece.piece === destSquare.piece!)) {
+                    setGameState(prevState => ({
+                        ...prevState,
+                        capturedPieces: {
+                            ...prevState.capturedPieces,
+                            [colour]: [...prevState.capturedPieces[colour], {piece: destSquare.piece!, number: 1}]
+                        }
+                    }))
+                } else {
+                    const newGameState = {...gameStateRef.current};
+                    newGameState.capturedPieces[colour].find(piece => piece.piece === destSquare.piece!)!.number += 1;
+                    setGameState(newGameState);
+                }
+            }
+
             let newBoard: Square[] = [];
             //Moving the piece
             if (move.castling) {
@@ -555,7 +586,6 @@ export function Chess() {
             {squareId: 'H2', pieceId: 'pawn', colour: 'white'},
         ]))
     }
-
 
     //Functions  to start / play the game
     const StartGame = () => {
@@ -1002,6 +1032,7 @@ export function Chess() {
         <>
             <NavBar />
             <div className="main-container" onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
+                {gameState.inProgress && <CapturedPieces position='left' capturedPieces={gameState.capturedPieces}/>}
                 {(gameState.outcome.winner || gameState.outcome.staleMate) && <GameOver outcome={gameState.outcome}/>}
                 {(!gameState.inProgress && !(gameState.outcome.winner || gameState.outcome.staleMate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} />}
                 {(gameState.promotions.white.length > 0 || gameState.promotions.black.length > 0) && gameState.inProgress && <Promotion PromotePiece={PromotePiece} colour={gameState.promotions.white.length > 0 ? 'white' : 'black'}/>}
@@ -1024,6 +1055,7 @@ export function Chess() {
                         )}
                     </div>
                 </div>
+                {gameState.inProgress && <CapturedPieces position='right' capturedPieces={gameState.capturedPieces}/>}
             </div>
         </>
     )
