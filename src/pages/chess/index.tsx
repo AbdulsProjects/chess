@@ -37,6 +37,7 @@ export interface GameOutcome {
 
 export interface CapturedPiece {
     piece: string,
+    points: number,
     number: number
 }
 
@@ -495,11 +496,12 @@ export function Chess() {
             const destSquare = board.find(square => square.id === move.target)!;
             if (move.capture) {
                 if (!gameStateRef.current.capturedPieces[colour].find(piece => piece.piece === destSquare.piece!)) {
+                    const piecePoints = definedPieces.find(piece => piece.id === destSquare.piece!)!.points;
                     setGameState(prevState => ({
                         ...prevState,
                         capturedPieces: {
                             ...prevState.capturedPieces,
-                            [colour]: [...prevState.capturedPieces[colour], {piece: destSquare.piece!, number: 1}]
+                            [colour]: [...prevState.capturedPieces[colour], {piece: destSquare.piece!, points: piecePoints, number: 1}]
                         }
                     }))
                 } else {

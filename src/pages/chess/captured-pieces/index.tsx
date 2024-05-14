@@ -13,8 +13,9 @@ export const CapturedPieces = (props: Props) => {
 
     const colour = props.position === 'left' ? 'white' : 'black';
     const oppositeColour = colour === 'black' ? 'white' : 'black';
-    const capturedPieces = props.capturedPieces[colour];
-
+    //Sorting the array to have the most valuable pieces sorted to the top
+    const capturedPieces = [...props.capturedPieces[colour]].sort((a, b) => b.points - a.points);
+    
     return (
         <div className={'captured-pieces-main-container captured-pieces-main-container-' + props.position }>
             <div className='captured-pieces-header'>
