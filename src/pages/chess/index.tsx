@@ -515,8 +515,12 @@ export function Chess() {
             //Moving the piece
             if (move.castling) {
                 newBoard = CastlePiece(boardRef.current, move, colour);
+                const castleAudio = new Audio('audio/castle.mp3');
+                castleAudio.play();
             } else {
                 newBoard = MovePiece(boardRef.current, sourceSquareId, targetSquare.id);
+                const moveAudio = new Audio('audio/' + (move.capture ? 'capture' : 'move-self') + '.mp3');
+                moveAudio.play();
             }
             
             //Updating the state / HTML
@@ -530,6 +534,8 @@ export function Chess() {
         } else {
             //Adding the piece
             setBoardAndHtml(AddPiece(boardRef.current, [{squareId: targetSquare.id, pieceId: piece, colour: colour}]));
+            const addAudio = new Audio('audio/move-self.mp3');
+            addAudio.play();
         }
     }
 
