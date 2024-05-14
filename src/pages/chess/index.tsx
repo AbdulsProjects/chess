@@ -681,7 +681,11 @@ export function Chess() {
             if (square.colour === colour || square.colour === null) {
                 return {
                     ...square,
-                    targeting: []
+                    targeting: [],
+                    targetedBy: {
+                        ...square.targetedBy,
+                        [colour]: []
+                    }
                 }
             } else {
                 return {
