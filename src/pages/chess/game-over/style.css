@@ -1,3 +1,8 @@
+.chess-game-over-container {
+    display: flex;
+    justify-content: center;
+}
+
 .chess-game-over-container > p {
     font-weight: bold;
     font-size: 2rem;
