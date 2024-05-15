@@ -14,7 +14,7 @@ export const Promotion = (prop: Props) => {
     return (
         <div className="promotion-container top-mid-container">
             {possiblePromotions.map(piece => 
-                <img src={'img/' + prop.colour + '_' + piece.id +'.png'} alt={piece.name} onClick={() => prop.PromotePiece(piece)}/>
+                <img key={piece.id} src={'img/' + prop.colour + '_' + piece.id +'.png'} alt={piece.name} onClick={() => prop.PromotePiece(piece)}/>
             )}
         </div>
     )

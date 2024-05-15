@@ -11,24 +11,6 @@ import { CapturedPieces } from "./captured-pieces"
 //Split the drop handler for on / off board
 //Make a click handler work for placing pieces too
 //Add a bin div element that can be used to remove pieces (add a double-click handler that does the same)
-//Potentially change the pieces model to allow for all pieces along the path to be captured
-//See if you can tidy up the function that finds the targettable squares, and change the knight object to move clockwise
-//Check if boardRef.current needs to replace all references to board
-//Drag a piece ontop of itself during start game state and check for an error
-
-//Create a checkmate checker
-//Prevent moves that would put you in check, and highlight the check tiles fully red when selecting the king
-
-//An error is thrown if trying to start a game without 2 kings. prevent game from starting in this case
-//Only allow 1 king to be added or allow for multiple kings (need to change how we find the king's index in that case, as this only works with 1 king)
-
-//Look at communalising the function used to remove old moves (currently used when promoting a piece / moving a piece)
-
-//Look at preventing the double-calculating that's done when moving a promotable piece to the end of the board (at the moment it calculates after moving the piece, then again after promoting)
-
-//CURRENT ISSUES WITH CHECKMATE CHECKER
-//Says stalemate when it's not the player's turn
-//Doesn't end the game when black starts in check (white's turn and there's a check)
 
 export interface GameOutcome {
     winner: 'black' | 'white' | null
@@ -199,7 +181,7 @@ export function Chess() {
             currentPromotionSquare.classList.add("highlight-promote")
         }
 
-    }, [board])
+    }, [board, gameState.inProgress])
 
     //Used to promote a piece
     const PromotePiece = (newPiece: Piece) => {
@@ -246,13 +228,13 @@ export function Chess() {
         })
 
         //Updating the HTML of the changed squares
-        differentSquares.map((square: Square) => {
+        differentSquares.map((square: Square): void => {
             
             const squareElement = document.getElementById(square.id)!;
             
             squareElement!.innerHTML = '';
             //Exitting if a piece was removed instead of replaced
-            if (!square.piece) {return}
+            if (!square.piece) { return undefined; }
 
             //Handling squares where a piece was added
             //Generating the new img element
@@ -269,6 +251,7 @@ export function Chess() {
             //Appending the new img element to the square div
             squareElement.appendChild(pieceImg);
 
+            return undefined;
        })
 
         //Updating the board in state
@@ -283,7 +266,7 @@ export function Chess() {
             if (piece === undefined) {
                 return {
                     ...square
-                }
+                };
             } else {
                 return {
                     ...square,
@@ -294,7 +277,7 @@ export function Chess() {
             }
         })
 
-        return newBoard
+        return newBoard;
     }
 
     const RemovePiece = (prevBoard: Square[], squareId: string): Square[] => {
@@ -332,7 +315,7 @@ export function Chess() {
         //Recalculating possible moves
         newBoard = RecalculateAllMoves(newBoard, colour);
         
-        return newBoard
+        return newBoard;
     }
 
     const CastlePiece = (prevBoard: Square[], move: TargetingSquare, colour: 'black' | 'white'): Square[] => {
@@ -354,8 +337,9 @@ export function Chess() {
     const ClearBoard = (): Square[] => {
 
         let newBoard: Square[] = [...boardRef.current];
-        board.map((square: Square) => {
+        board.map((square: Square): void => {
             newBoard = RemovePiece(newBoard, square.id);
+            return undefined;
         })
         
         return(newBoard);
@@ -388,7 +372,7 @@ export function Chess() {
                 }
             }));
 
-            return true
+            return true;
         }
         
         if (checkMoves.length === 0 && !validMove) { 
@@ -403,7 +387,7 @@ export function Chess() {
                     }
                 }));
 
-                return true
+                return true;
             }
         }
 
@@ -424,16 +408,16 @@ export function Chess() {
                     }
                 }));
 
-                return true
+                return true;
             }
         }
 
-        return false
+        return false;
         
     }
 
     const ReturnCheckMoves = (king: Square): TargetingSquare[] => {
-        return king.targetedBy[king.colour === 'black' ? 'white' : 'black'].filter(move => move.capture)
+        return king.targetedBy[king.colour === 'black' ? 'white' : 'black'].filter(move => move.capture);
     }
 
     //Returning a boolean to specify if the interactivity should be disabled
@@ -469,28 +453,29 @@ export function Chess() {
         e.stopPropagation();
 
         const colour = e.dataTransfer.getData("Colour");
-        if (colour !== 'black' && colour !== 'white') { return }
+        if (colour !== 'black' && colour !== 'white') { return; }
         const piece = e.dataTransfer.getData("Piece");
         const sourceSquareId = e.dataTransfer.getData('squareId');
         const currentSquare = board.find(square => square.id === sourceSquareId)!;
 
         //Grabbing the target square, and returning out of the function if the target square is the parent square
+        let targetSquare: Square | undefined = undefined;
         if ((e.target as HTMLElement).nodeName ==='IMG') {
             if (document.getElementById(e.dataTransfer.getData("pieceId"))!.parentNode === (e.target as HTMLElement).parentNode) { return }
-            var targetSquare = board.find(square => square.id === (e.target as HTMLElement).parentElement!.id)!;
+            targetSquare = board.find(square => square.id === (e.target as HTMLElement).parentElement!.id)!;
         } else {
-            var targetSquare = board.find(square => square.id === (e.target as HTMLElement).id)!;
+            targetSquare = board.find(square => square.id === (e.target as HTMLElement).id)!;
         }
 
         //Moving the piece if a game is in progress, duplicating the piece if not
         if(gameState.inProgress) {
             //Returning if trying to grab the other player's piece
-            if (colour !== gameState.currentPlayer) {return}
+            if (colour !== gameState.currentPlayer) { return; }
 
             //Returning if trying to move to an invalid square
             const targeting = currentSquare.targeting;
-            const move = targeting.find(targettingSquares => targettingSquares.target === targetSquare.id && targettingSquares.moveable);
-            if (!move) {return}
+            const move = targeting.find(targettingSquares => targettingSquares.target === targetSquare!.id && targettingSquares.moveable);
+            if (!move) { return; }
 
             //Checking if there is a piece in the target square, and appending/updating captured squares if there is
             const destSquare = board.find(square => square.id === move.target)!;
@@ -541,13 +526,13 @@ export function Chess() {
 
     const BinPiece = (e: React.DragEvent) => {
         //Returning out of the function if a game is in progress
-        if (gameState.inProgress) {return};
+        if (gameState.inProgress) { return; }
         
         //Grabbing the parent of the dragged element
         const parentElement = document.getElementById(e.dataTransfer.getData("squareId"));
         
         //Returning out of the function if the piece is not on the board
-        if (!parentElement?.classList.contains("square")) { return }
+        if (!parentElement?.classList.contains("square")) { return; }
 
         const newBoard = RemovePiece(boardRef.current, parentElement.id);
         
@@ -620,8 +605,8 @@ export function Chess() {
         setBoard(newBoard);
 
         //Checking for immediate checks / check mates
-        if (CheckForLoss(newBoard, 'white')) { return };
-        if (CheckForLoss(newBoard, 'black')) { return };
+        if (CheckForLoss(newBoard, 'white')) { return; };
+        if (CheckForLoss(newBoard, 'black')) { return; };
 
         //Updating state
         setGameState(prevState => ({
@@ -639,25 +624,26 @@ export function Chess() {
 
         //Selecting the piece / square
         const piece = (e.target as HTMLElement);
-        if (!piece || !piece.parentElement) { return }
+        if (!piece || !piece.parentElement) { return; }
         const squareName = piece.parentElement.id;
         const squareObj = boardRef.current.find(square => square.id === squareName);
-        if (!squareObj) { return }
+        if (!squareObj) { return; }
 
         //Returning if trying to grab the other player's piece
-        if (squareObj.colour !== gameStateRef.current.currentPlayer) {return}
+        if (squareObj.colour !== gameStateRef.current.currentPlayer) { ;return }
 
         // //Adding a highlight to all possible moves
         piece.parentElement.classList.add("highlight-select");
 
-        if (!squareObj.targeting) { return }
+        if (!squareObj.targeting) { return; }
 
         //Updating the HTML to indicate targettable squares
-        squareObj.targeting.map((move: TargetingSquare) => {
+        squareObj.targeting.map((move: TargetingSquare): void => {
                 const targetElement = document.getElementById(move.target)!;
                 move.capture && move.moveable && targetElement.classList.add("highlight-capture");
                 move.castling && targetElement.classList.add("highlight-castling");
                 !move.capture && !move.castling && move.moveable && targetElement.classList.add("highlight-move");
+                return undefined;
         });
 
     }
@@ -700,14 +686,16 @@ export function Chess() {
 
         //Calculating the moves of the passed colour
         const squaresToCalculate: Square[] = newBoard.filter((square) => square.piece && square.colour === colour);
-        squaresToCalculate.map((square) => {
+        squaresToCalculate.map((square): void => {
 
             //Exitting if no square found
-            if (!square) { return newBoard }
+            if (!square) { return undefined; }
 
             //Calculating moves for the current square
             const moves = ReturnPieceMoves(newBoard, square);
             MutateBoardWithMoves(newBoard, moves, square.id);
+
+            return undefined;
         })
 
         //Calculating castling moves and updating the board with the returned moves
@@ -789,13 +777,11 @@ export function Chess() {
                     }
 
                     //Adding the current step's square to the path array if the path doesn't already include the opposing king's square. This is to calculate what squares block check
-                    //THIS IS MUTATING THE PATH. THINK IT'S BECAUSE IT'S A POINTER NOT A PRIMATIVE TYPE
                     if (!result.currentIteration.path.find(squareId => squareId === opposingKingSquare.id)) { result.currentIteration.path.push(stepTargetSquare.id) };
 
                     //Setting blocked = true if there is a piece on a square that isn't a capture square or if the piece is the same colour
                     if (stepTargetSquare!.piece !== null) {
                         //Appending the blocker to the blockedBy array
-                        //REVIEW THIS LINE, THE QUEEN MOVES SAY THEY@RE BLOCKED BY PIECES THAT ARE AFTER THE MOVE
                         if ((stepTargetSquare.piece !== 'king' || stepTargetSquare.colour === square.colour) && !result.currentIteration.blockedBy[stepTargetSquare.colour!].find(squareId => squareId === stepTargetSquare.id)) { result.currentIteration.blockedBy[stepTargetSquare.colour!].push(stepTargetSquare.id) }
                         if (index !== path.length - 1 || direction.moveOnly || stepTargetSquare!.colour === square.colour) {
                             result.currentIteration.blocked = true;
@@ -817,7 +803,7 @@ export function Chess() {
                     //1) The piece isn't blocked at any point in its path
                     //2) The direction isn't capture only, or it's capture only but there's a capturable piece on the target square
                     //3) The direction doesn't leave the current player open to a check
-                    moveable: !result.currentIteration.blocked && (!direction.captureOnly || direction.captureOnly && result.currentIteration.capture) && (nonCheckSquares.length === 0 || Boolean(nonCheckSquares.find(squareId => squareId === destTargetSquare.id))),
+                    moveable: !result.currentIteration.blocked && (!direction.captureOnly || (direction.captureOnly && result.currentIteration.capture)) && (nonCheckSquares.length === 0 || Boolean(nonCheckSquares.find(squareId => squareId === destTargetSquare.id))),
                     capture: result.currentIteration.capture,
                     moveOnly: result.currentIteration.moveOnly,
                     castling: false,
@@ -1051,18 +1037,18 @@ export function Chess() {
                 <div className="chess-container">
                     <div className="y-labels">
                         {[...Array(8)].map((item, index) => 
-                            <p>{8 - index}</p>
+                            <p key={'y-label-' + index}>{8 - index}</p>
                         )}
                     </div>
                     <div className="x-labels">
                         {[...Array(8)].map((item, index) => 
-                            <p>{String.fromCharCode(index + 65)}</p>
+                            <p key={'x-label-' + index}>{String.fromCharCode(index + 65)}</p>
                         )}
                     </div>
                     <div className='chess-board'>
                         {board.map((square) => {
                             const altRow = (square.id.charCodeAt(0) + Number(square.id[1])) % 2;
-                            return <div id={square.id} className={`square ${altRow ? 'light-square': 'dark-square'}`} onDrop={(e) => DropPiece(e)} onDragOver={HoverPiece} onDragStart={DivPreventDefault}></div>
+                            return <div key={square.id} id={square.id} className={`square ${altRow ? 'light-square': 'dark-square'}`} onDrop={(e) => DropPiece(e)} onDragOver={HoverPiece} onDragStart={DivPreventDefault}></div>
                         }
                         )}
                     </div>

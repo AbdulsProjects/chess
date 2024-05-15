@@ -1,3 +1,4 @@
+import React from 'react'
 import { CapturedPiece } from '..'
 import './style.css'
 
@@ -23,16 +24,16 @@ export const CapturedPieces = (props: Props) => {
             </div>
             <div className='captured-pieces-list-container'>
                 {capturedPieces.map(piece => 
-                    <>
-                        <div className="captured-pieces-piece-container">
-                            {[...Array(piece.number)].map(i => 
-                                <img className="captured-piece" src={"img/" + oppositeColour + '_' + piece.piece + '.png'} alt={oppositeColour + ' ' + piece.piece} />    
+                    <React.Fragment key={piece.piece + '-fragment'}>
+                        <div key={piece.piece + '-piece-container'} className="captured-pieces-piece-container">
+                            {[...Array(piece.number)].map((item, index) => 
+                                <img key={piece.piece + index} className="captured-piece" src={"img/" + oppositeColour + '_' + piece.piece + '.png'} alt={oppositeColour + ' ' + piece.piece} />    
                             )}
                         </div>
-                        <div className="captured-piece-count-container">
-                            <p className='captured-piece-count'>x{piece.number}</p>
+                        <div key={piece.piece + '-count-container'} className="captured-piece-count-container">
+                            <p key={piece.piece + '-count'} className='captured-piece-count'>x{piece.number}</p>
                         </div>
-                    </>
+                    </React.Fragment>
                 )}
             </div>
         </div>
