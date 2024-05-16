@@ -212,6 +212,8 @@ export function Chess() {
         //Calculating the possible moves for the next player's next turn if this was the last promotion (may not be the last promotion when the game is started)
         if (gameState.promotions.white.length + gameState.promotions.black.length <= 1) { newBoard = CalculatePlayerMoves(newBoard, promotionSquare.colour === 'white' ? 'black' : 'white'); }
 
+        CheckForLoss(newBoard, promotionSquare.colour === 'white' ? 'black' : 'white')
+
         //Updating state
         setBoardAndHtml(newBoard);
     }
