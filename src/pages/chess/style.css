@@ -114,3 +114,11 @@ button {
     background-color: rgb(255, 189, 67);
     border: 5px solid orange;
 }
+
+/* Lobby UI Styling (needs to be moved when the UI is turned into a component) */
+.lobby-ui {
+    position: absolute;
+    height: 500px;
+    width: 100px;
+    background-color: white;
+}

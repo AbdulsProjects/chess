@@ -6,6 +6,7 @@ import { GameOver } from "./game-over"
 import { PreGame } from "./pre-game"
 import { NavBar } from "../navbar"
 import { CapturedPieces } from "./captured-pieces"
+import { Square, Target, TargetingSquare } from "../../utils/models"
 
 //THINGS TO DO
 //Split the drop handler for on / off board
@@ -27,36 +28,6 @@ export function Chess() {
 
     //Setting up the state
 
-    interface Square {
-        id: string,
-        piece: string | null,
-        colour: 'black' | 'white' | null,
-        x: number,
-        y: number,
-        firstTurn: boolean,
-        targeting: TargetingSquare[],
-        targetedBy: Target
-    } 
-
-    interface Target { 
-        black: TargetingSquare[],
-        white: TargetingSquare[]
-    }
-
-    interface TargetingSquare {
-        target: string,
-        source: string,
-        moveable: boolean,
-        capture: boolean,
-        moveOnly: boolean,
-        castling: boolean,
-        path: string[],
-        blockedBy: {
-            black: string[],
-            white: string[]
-        }
-    }
-
     interface PiecesToAdd {
         squareId: string,
         pieceId: string,
@@ -77,6 +48,10 @@ export function Chess() {
         }
     }
 
+    interface UiVisibility {
+        lobby: boolean
+    }
+
     interface TargettableSquareReducer {
         currentIteration: {
             x: number,
@@ -92,6 +67,80 @@ export function Chess() {
             path: string[]
         }
         squares: TargetingSquare[]
+    }
+
+    interface OnlineState {
+        wsConn: WebSocket | null,
+        clientId: string | undefined
+    }
+
+    const Connect = () => {
+
+        const ws = new WebSocket('ws://localhost:8080');
+        
+        ws.onmessage = message => {
+            
+            const response = JSON.parse(message.data);
+            
+            switch(response.method) {
+                //Connecting to the server
+                case 'connect': {
+                    
+                    setOnlineState(prevState => ({
+                        ...prevState,
+                        wsConn: ws,
+                        clientId: response.clientId
+                    }));
+        
+                    setUiVisibility(prevState => ({
+                        ...prevState,
+                        lobby: true
+                    }));
+                    break;
+                }
+
+                //Creating a lobby
+                case 'create': {
+                    console.log(response);
+                    break;
+                }
+
+                //Joining a lobby
+                case 'join': {
+                    console.log(response);
+                    break;
+                }
+
+            };
+
+        }
+
+        ws.addEventListener("open", () => {
+            console.log(ws);
+        })
+
+    }
+
+    const CreateLobby = () => {
+        
+        const payLoad = {
+            method: 'create',
+            clientId: onlineState.clientId,
+            board: board
+        }
+
+        onlineState.wsConn!.send(JSON.stringify(payLoad));
+    }
+    
+    const JoinLobby = () => {
+        
+        const payLoad = {
+            method: 'join',
+            clientId: onlineState.clientId,
+            lobbyId: (document.getElementById('lobby-id') as HTMLInputElement)!.value
+        }
+        
+        onlineState.wsConn!.send(JSON.stringify(payLoad));
     }
 
     //Storing the board / game state in state
@@ -111,7 +160,14 @@ export function Chess() {
             white: [],
             black: []
         }
-    })
+    });
+    const [uiVisibility, setUiVisibility] = useState<UiVisibility>({
+        lobby: false
+    });
+    const [onlineState, setOnlineState] = useState<OnlineState>({
+        wsConn: null,
+        clientId: undefined
+    });
 
     const boardRef = useRef<Square[]>([]);
     const gameStateRef = useRef<GameState>(gameState);
@@ -1031,10 +1087,17 @@ export function Chess() {
     return (
         <>
             <NavBar />
+            {uiVisibility.lobby && 
+                <div className="lobby-ui">
+                    <button onClick={CreateLobby}>Create Lobby</button>
+                    <button onClick={JoinLobby}>Join Lobby</button>
+                    <input type="text" id="lobby-id" />
+                </div>
+            }
             <div className="main-container" onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
                 {gameState.inProgress && <CapturedPieces position='left' capturedPieces={gameState.capturedPieces}/>}
                 {(gameState.outcome.winner || gameState.outcome.staleMate) && <GameOver outcome={gameState.outcome}/>}
-                {(!gameState.inProgress && !(gameState.outcome.winner || gameState.outcome.staleMate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} />}
+                {(!gameState.inProgress && !(gameState.outcome.winner || gameState.outcome.staleMate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} Connect={Connect}/>}
                 {(gameState.promotions.white.length > 0 || gameState.promotions.black.length > 0) && gameState.inProgress && <Promotion PromotePiece={PromotePiece} colour={gameState.promotions.white.length > 0 ? 'white' : 'black'}/>}
                 <div className="chess-container">
                     <div className="y-labels">
