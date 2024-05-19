@@ -4,7 +4,8 @@ import React from 'react'
 interface Props {
     DragPiece: (e: React.DragEvent<HTMLElement>, colour: 'black' | 'white', piece: string) => void,
     StartGame: () => void,
-    StandardGame: () => void
+    StandardGame: () => void,
+    Connect: () => void
 }
 
 export const PreGame = (props: Props) => {
@@ -33,6 +34,7 @@ export const PreGame = (props: Props) => {
                 <button onClick={() => alert('This feature is currently in development')}>Create Piece</button>
                 <button onClick={() => alert('This feature is currently in development')}>Import Piece</button>
                 <button onClick={props.StandardGame}>Standard Game</button>
+                <button onClick={props.Connect}>Connect</button>
                 <button id='chess-start-button' onClick={props.StartGame}>Start Game</button>
             </div>
         </div>
