@@ -2,14 +2,22 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
-import { Chess } from '../src/pages/chess';
+import { NavBar } from './pages/navbar';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { ChessMain } from './pages/chess';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <Chess />
+    <BrowserRouter>
+      <NavBar />
+      <Routes>
+        <Route path='/' element={<ChessMain />} />
+        <Route path='/chess-game' element={<ChessMain />} />
+      </Routes>
+    </BrowserRouter>
   </React.StrictMode>
 );
 

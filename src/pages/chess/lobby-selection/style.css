@@ -1,0 +1,23 @@
+.lobby-selection-main-container {
+    /* position: relative;
+    height: 80%;
+    width: 30%; */
+    grid-column: 2 / 3;
+    grid-row: 1 / -1;
+    height: 80%;
+    align-self: center;
+}
+
+.lobby-selection-current-tab {
+    background-color: var(--dark-square);
+    border: 5px solid var(--dark-brown);
+    position: relative;
+    height: calc(100% - 3% - 3px);
+    width: 100%;
+}
+
+.lobby-selection-main-container > button {
+    border: 3px solid var(--dark-brown);
+    border-bottom: none;
+    height: 3%;
+}
