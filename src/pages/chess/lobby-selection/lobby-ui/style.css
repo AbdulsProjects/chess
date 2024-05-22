@@ -2,7 +2,7 @@
     position: relative;
     height: calc(100% - 20px);
     width: calc(100% - 20px);
-    background-color: black;
+    border: 3px solid var(--dark-brown);
     margin: 10px;
     display: flex;
 }
@@ -27,7 +27,9 @@
 }
 
 .lobby-ui-content {
-    background-color: blue;
+    background-color: #dac698;
     height: 100%;
     width: calc(100% - 60px);
+    padding: 10px;
+    font-size: 1.5rem;
 }
