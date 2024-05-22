@@ -14,7 +14,7 @@ export const LobbySelection = (props: Props) => {
     return (
         <div className='lobby-selection-main-container'>
             <div className='lobby-selection-current-tab'>
-                {showLobbyUi ? <LobbyUi /> : <ChooseConnectivity setShowBoard={props.setShowBoard} setShowLobbyUi={setShowLobbyUi} />}
+                {showLobbyUi ? <LobbyUi setShowLobbyUi={setShowLobbyUi}/> : <ChooseConnectivity setShowBoard={props.setShowBoard} setShowLobbyUi={setShowLobbyUi} />}
             </div>
         </div>
     )
