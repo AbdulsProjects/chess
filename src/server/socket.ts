@@ -10,7 +10,7 @@ interface Clients {
     }
 }
 
-interface Lobbies {
+export interface Lobbies {
     [lobbyId: string]: {
         lobbyId: string,
         lobbyName: string,
