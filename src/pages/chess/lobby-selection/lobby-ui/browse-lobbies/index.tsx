@@ -1,6 +1,7 @@
-import { Dispatch, SetStateAction, useContext, useEffect } from 'react';
+import { Dispatch, SetStateAction, useContext, useEffect, useState } from 'react';
 import './style.css'
 import { IWsContext, WsContext } from '../../../../../contexts/wsContext';
+import { Lobbies } from '../../../../../server/socket';
 
 interface Props {
     setShowLobbyUi: Dispatch<SetStateAction<boolean>>,
@@ -9,18 +10,25 @@ interface Props {
 
 export const BrowseLobbies = (props: Props) => {
 
-    const { onlineState }  = useContext(WsContext) as IWsContext;
+    const [lobbies, setLobbies] = useState<Lobbies>({});
+
+    const { onlineState, createCallback }  = useContext(WsContext) as IWsContext;
 
     //Returning the list of lobbies
     useEffect(() => {
         
+        //Creating the callback function to save the lobbies to state
+        createCallback('return-lobbies', (response) => {
+            setLobbies(response.lobbies);
+        })
+
+        //Sending th request to return the lobbies
         const payLoad = {
             method: 'return-lobbies',
             clientId: onlineState.clientId,
         }
 
         onlineState.wsConn!.send(JSON.stringify(payLoad));
-        
     }, [])
 
     const JoinLobby = () => {
@@ -35,6 +43,11 @@ export const BrowseLobbies = (props: Props) => {
     }
 
     return (
-        <div>This is a test</div>
+        <div>
+            {Object.keys(lobbies).map(lobbyId => 
+                <div>{lobbies[lobbyId].lobbyName}</div>
+            )}
+            <button onClick={() => console.log(lobbies)}></button>
+        </div>
     )
 }
