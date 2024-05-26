@@ -68,80 +68,6 @@ export function Chess() {
         squares: TargetingSquare[]
     }
 
-    interface OnlineState {
-        wsConn: WebSocket | null,
-        clientId: string | undefined
-    }
-
-    const Connect = () => {
-
-        const ws = new WebSocket('ws://localhost:8080');
-        
-        ws.onmessage = message => {
-            
-            const response = JSON.parse(message.data);
-            
-            switch(response.method) {
-                //Connecting to the server
-                case 'connect': {
-                    
-                    setOnlineState(prevState => ({
-                        ...prevState,
-                        wsConn: ws,
-                        clientId: response.clientId
-                    }));
-        
-                    setUiVisibility(prevState => ({
-                        ...prevState,
-                        lobby: true
-                    }));
-                    break;
-                }
-
-                //Creating a lobby
-                case 'create': {
-                    console.log(response);
-                    break;
-                }
-
-                //Joining a lobby
-                case 'join': {
-                    console.log(response);
-                    break;
-                }
-
-            };
-
-        }
-
-        ws.addEventListener("open", () => {
-            console.log(ws);
-        })
-
-    }
-
-    const CreateLobby = () => {
-        
-        const payLoad = {
-            method: 'create',
-            clientId: onlineState.clientId,
-            board: board
-        }
-
-        onlineState.wsConn!.send(JSON.stringify(payLoad));
-    }
-    
-    const JoinLobby = () => {
-        
-        const payLoad = {
-            method: 'join',
-            clientId: onlineState.clientId,
-            lobbyId: (document.getElementById('lobby-id') as HTMLInputElement)!.value
-        }
-        
-        onlineState.wsConn!.send(JSON.stringify(payLoad));
-    }
-
     //Storing the board / game state in state
     const [board, setBoard] = useState<Square[]>([]);
     const [gameState, setGameState] = useState<GameState>({
@@ -159,13 +85,6 @@ export function Chess() {
             white: [],
             black: []
         }
-    });
-    const [uiVisibility, setUiVisibility] = useState<UiVisibility>({
-        lobby: false
-    });
-    const [onlineState, setOnlineState] = useState<OnlineState>({
-        wsConn: null,
-        clientId: undefined
     });
 
     const boardRef = useRef<Square[]>([]);
@@ -1085,17 +1004,9 @@ export function Chess() {
 
     return (
         <>
-            {uiVisibility.lobby && 
-                <div className="lobby-ui">
-                    <button onClick={CreateLobby}>Create Lobby</button>
-                    <button onClick={JoinLobby}>Join Lobby</button>
-                    <input type="text" id="lobby-id" />
-                </div>
-            }
-        
             {gameState.inProgress && <CapturedPieces position='left' capturedPieces={gameState.capturedPieces}/>}
             {(gameState.outcome.winner || gameState.outcome.staleMate) && <GameOver outcome={gameState.outcome}/>}
-            {(!gameState.inProgress && !(gameState.outcome.winner || gameState.outcome.staleMate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} Connect={Connect}/>}
+            {(!gameState.inProgress && !(gameState.outcome.winner || gameState.outcome.staleMate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} />}
             {(gameState.promotions.white.length > 0 || gameState.promotions.black.length > 0) && gameState.inProgress && <Promotion PromotePiece={PromotePiece} colour={gameState.promotions.white.length > 0 ? 'white' : 'black'}/>}
             <div className="chess-container">
                 <div className="y-labels">

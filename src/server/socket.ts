@@ -13,6 +13,9 @@ interface Clients {
 interface Lobbies {
     [lobbyId: string]: {
         lobbyId: string,
+        lobbyName: string,
+        lobbyPassword: string | null,
+        gameType: string,
         whitePlayer: string | null,
         blackPlayer: string | null,
         board: Square[]
@@ -44,21 +47,41 @@ wsServer.on('request', request => {
             switch(result.method) {
                 //Creating a new game
                 case 'create': {
-                        
+                     
+                    //Doesn't create a new game if a game with that name already exists
+                    for (const lobbyId in lobbies) {
+                        if (lobbies[lobbyId].lobbyName === result.lobbyName) {
+                            const payLoad = {
+                                method: 'create',
+                                lobby: null,
+                                status: 'failed',
+                                message: 'A lobby with this name already exists'
+                            };
+
+                            clients[clientId].connection.send(JSON.stringify(payLoad));
+                            return;
+                        }
+                    };
+
                     const lobbyId: string = crypto.randomUUID();
 
                     lobbies[lobbyId] = {
                         lobbyId: lobbyId,
+                        lobbyName: result.lobbyName,
+                        lobbyPassword: result.lobbyPassword,
+                        gameType: result.gameType,
                         whitePlayer: clientId,
                         blackPlayer: null,
-                        board: result.board
+                        board: []
                     };
 
                     clients[clientId].lobbyId = lobbyId;
 
                     const payLoad = {
                         method: 'create',
-                        lobby: lobbies[lobbyId]
+                        lobby: lobbies[lobbyId],
+                        status: 'succeeded',
+                        message: null
                     };
 
                     clients[clientId].connection.send(JSON.stringify(payLoad));
@@ -97,6 +120,25 @@ wsServer.on('request', request => {
                         lobby: lobbies[lobbyId],
                         status: 'succeeded',
                         message: null
+                    };
+
+                    clients[clientId].connection.send(JSON.stringify(payLoad));
+                    break;
+                }
+
+                //Returning all lobbies with obfuscated passwords
+                case 'return-lobbies': {
+                    
+                    const obfuscatedLobbies: Lobbies = structuredClone(lobbies);
+
+                    for (var key of Object.keys(obfuscatedLobbies)) {
+                        obfuscatedLobbies[key].lobbyPassword = obfuscatedLobbies[key].lobbyPassword === null ? null : 'true'
+                    }
+
+                    //Sending the payload to the client
+                    const payLoad = {
+                        method: 'return-lobbies',
+                        lobbies: obfuscatedLobbies,
                     };
 
                     clients[clientId].connection.send(JSON.stringify(payLoad));

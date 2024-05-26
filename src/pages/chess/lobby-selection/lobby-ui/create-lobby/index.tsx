@@ -1,30 +1,79 @@
+import { IWsContext, WsContext } from '../../../../../contexts/wsContext'
 import './style.css'
 
-import React from 'react'
+import React, { Dispatch, SetStateAction, useContext, useEffect } from 'react'
 
-export const CreateLobby = () => {
+interface Props {
+    setShowLobbyUi: Dispatch<SetStateAction<boolean>>,
+    setShowBoard: Dispatch<SetStateAction<boolean>>
+}
+
+export const CreateLobby = (props: Props) => {
+    
+    const { onlineState }  = useContext(WsContext) as IWsContext;
+
+    useEffect(() => {
+        //Checking the sandbox radio button by default
+        (document.getElementById('sandbox') as HTMLInputElement).checked = true;
+    }, [])
+
+    //Displaying the board once the lobby is created
+    useEffect(() => {
+        if (onlineState.lobbyId) {
+            props.setShowBoard(true);
+            props.setShowLobbyUi(false);
+        }
+    }, [onlineState])
+
+    const CreateLobby = (lobbyName: string, lobbyPassword: string | null, gameType: 'sandbox' | 'suggestion' | 'restricted') => {
+        
+        const payLoad = {
+            method: 'create',
+            clientId: onlineState.clientId,
+            lobbyName: lobbyName,
+            lobbyPassword: lobbyPassword,
+            gameType: gameType
+        }
+
+        onlineState.wsConn!.send(JSON.stringify(payLoad));
+    }
+
+    const CreateLobbyButton = () => {
+        
+        const lobbyName: HTMLInputElement = (document.getElementById('lobby-name')! as HTMLInputElement);
+        if (!lobbyName.value) {
+            alert('You must enter a lobby name to create a lobby');
+            return;
+        }
+
+        const lobbyPassword: HTMLInputElement = (document.getElementById('lobby-password')! as HTMLInputElement);
+        const lobbyMode: HTMLInputElement = (document.querySelector('input[name="game_type"]:checked')! as HTMLInputElement);
+        
+        CreateLobby(lobbyName.value, lobbyPassword.value, (lobbyMode.value as 'sandbox' | 'suggestion' | 'restricted'));
+    }
+    
     return (
         <>
             <h3>Create Lobby</h3>
             <div className='lobby-ui-row'>
                 <label htmlFor=''>Lobby Name</label>
-                <input type='text' />
+                <input id='lobby-name' type='text' />
             </div>
             <div className='lobby-ui-row'>
                 <label htmlFor=''>Lobby Password (optional)</label>
-                <input type='text' />
+                <input id='lobby-password' type='text' />
             </div>
             <label htmlFor=''>Game type</label>
             <div className="lobby-ui-radio-container">
-                <input type='radio' id='sandbox' name='game_type' value='Sandbox' />
+                <input type='radio' id='sandbox' name='game_type' value='sandbox' />
                 <label htmlFor='sandbox' title='Either player can place any piece anywhere'>Sandbox</label>
-                <input type='radio' id='suggestion' name='game_type' value='Suggestion' />
+                <input type='radio' id='suggestion' name='game_type' value='suggestion' />
                 <label htmlFor='suggestion' title='One player decides where all pieces will start'>Suggestion</label>
-                <input type='radio' id='restricted' name='game_type' value='Restricted' />
+                <input type='radio' id='restricted' name='game_type' value='restricted' />
                 <label htmlFor='restricted' title='Only allow pieces to start on the first 2 rows for each player'>Restricted</label>
             </div>
             <div className='create-lobby-button-container'>
-                <button className='chess-button create-lobby-button'>Create Lobby</button>
+                <button className='chess-button create-lobby-button' onClick={() => CreateLobbyButton()}>Create Lobby</button>
             </div>
         </>
     )

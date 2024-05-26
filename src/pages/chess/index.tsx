@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { LobbySelection } from './lobby-selection'
 import './style.css'
 import { Chess } from './game';
+import { OnlineState } from '../../contexts/wsContext';
 
 export const ChessMain = () => {
 
