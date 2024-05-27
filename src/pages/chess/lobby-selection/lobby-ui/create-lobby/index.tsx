@@ -31,7 +31,7 @@ export const CreateLobby = (props: Props) => {
             method: 'create',
             clientId: onlineState.clientId,
             lobbyName: lobbyName,
-            lobbyPassword: lobbyPassword,
+            lobbyPassword: lobbyPassword === '' ? null : lobbyPassword,
             gameType: gameType
         }
 
@@ -53,7 +53,7 @@ export const CreateLobby = (props: Props) => {
     }
     
     return (
-        <>
+        <div className='create-lobby-container'>
             <h3>Create Lobby</h3>
             <div className='lobby-ui-row'>
                 <label htmlFor=''>Lobby Name</label>
@@ -75,6 +75,6 @@ export const CreateLobby = (props: Props) => {
             <div className='create-lobby-button-container'>
                 <button className='chess-button create-lobby-button' onClick={() => CreateLobbyButton()}>Create Lobby</button>
             </div>
-        </>
+        </div>
     )
 }

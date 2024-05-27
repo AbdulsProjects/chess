@@ -131,6 +131,8 @@ wsServer.on('request', request => {
                     
                     const obfuscatedLobbies: Lobbies = structuredClone(lobbies);
 
+                    console.log(lobbies);
+
                     for (var key of Object.keys(obfuscatedLobbies)) {
                         obfuscatedLobbies[key].lobbyPassword = obfuscatedLobbies[key].lobbyPassword === null ? null : 'true'
                     }

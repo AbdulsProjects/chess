@@ -1,0 +1,56 @@
+.browse-lobbies-header {
+    height: 40px;
+    width: 100%;
+    position: relative;
+    background-color: var(--dark-square);
+    border-bottom: 2px solid black;
+    display: flex;
+    justify-content: flex-end;
+    padding: 5px;
+}
+
+.refresh-button {
+    align-self: center;
+    height: 100%;
+    padding-top: 3px;
+}
+
+.refresh-button > img {
+    height: 20px;
+    width: auto;
+    position: relative;
+
+}
+
+.lobby-container {
+    margin-left: 10px;
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+}
+
+.lobby-container-row {
+    display: flex;
+    padding: 5px 10px 0 0;
+    margin: 5px 0;
+    justify-content: space-between;
+}
+
+.lobby-container-row > p {
+    margin: 0;
+}
+
+.lobby-container-row > p > input[type='checkbox'] {
+    height: 20px;
+    width: 20px
+}
+
+.lobby-container > button {
+    height: 60%;
+    margin: 5px 20px 5px 5px;
+    align-self: center;
+    font-size: 2rem;
+}
+
+.browse-lobbies-divider {
+    margin: 0px;
+}
