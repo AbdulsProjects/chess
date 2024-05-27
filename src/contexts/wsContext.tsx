@@ -71,11 +71,14 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
 
                 //Joining a lobby
                 case 'join': {
-                    console.log(response);
-                    setOnlineState(prevState => ({
-                        ...prevState,
-                        lobbyId: response.lobby.lobbyId
-                    }));
+                    if (response.status === 'succeeded') {
+                        setOnlineState(prevState => ({
+                            ...prevState,
+                            lobbyId: response.lobby.lobbyId
+                        }));
+                    } else {
+                        alert(response.message);
+                    }
                     break;
                 }
 
