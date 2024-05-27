@@ -22,7 +22,7 @@ export const BrowseLobbies = (props: Props) => {
             setLobbies(response.lobbies);
         })
 
-        //Sending th request to return the lobbies
+        //Sending the request to return the lobbies
         const payLoad = {
             method: 'return-lobbies',
             clientId: onlineState.clientId,
@@ -31,23 +31,73 @@ export const BrowseLobbies = (props: Props) => {
         onlineState.wsConn!.send(JSON.stringify(payLoad));
     }, [])
 
-    const JoinLobby = () => {
+    //Displaying the board once a lobby has been joined
+    useEffect(() => {
+        if (onlineState.lobbyId) {
+            props.setShowBoard(true);
+            props.setShowLobbyUi(false);
+        }
+    }, [onlineState])
+
+    const JoinLobby = (lobbyId: string) => {
         
         const payLoad = {
             method: 'join',
             clientId: onlineState.clientId,
-            lobbyId: (document.getElementById('lobby-id') as HTMLInputElement)!.value
-        }
+            lobbyId: lobbyId
+        };
         
         onlineState.wsConn!.send(JSON.stringify(payLoad));
     }
 
+    const JoinlobbyButton = (lobbyId: string) => {
+        
+        const lobby = lobbies[lobbyId];
+
+        if (lobby.lobbyPassword) {
+            console.log(onlineState);
+        } else {
+            console.log('joining lobby')
+            JoinLobby(lobbyId);
+        }
+    }
+
+    const RefreshLobbies = () => {
+            //Sending the request to return the lobbies
+            const payLoad = {
+                method: 'return-lobbies',
+                clientId: onlineState.clientId,
+            }
+    
+            onlineState.wsConn!.send(JSON.stringify(payLoad));
+    }
+
+    console.log(onlineState);
+
     return (
         <div>
+            <div className='browse-lobbies-header'>
+                <button className='refresh-button chess-button' onClick={() => RefreshLobbies()}><img src="img/icon-refresh.webp" alt="Refresh" /></button>
+            </div>
             {Object.keys(lobbies).map(lobbyId => 
-                <div>{lobbies[lobbyId].lobbyName}</div>
+                <>
+                    <div className='lobby-container'>
+                        <div>
+                            <div className='lobby-container-row'>
+                                <p>Lobby Name: {lobbies[lobbyId].lobbyName}</p>
+                            </div>
+                            <div className='lobby-container-row'>
+                                <p>Game Type: {lobbies[lobbyId].gameType}</p>
+                            </div>
+                            <div className='lobby-container-row'>
+                                <p>Password: <input type='checkbox' checked={lobbies[lobbyId].lobbyPassword === 'true'}/></p>
+                            </div>
+                        </div>
+                        <button className='chess-button' onClick={() => JoinlobbyButton(lobbyId)}>Join</button>
+                    </div>
+                    <hr className='browse-lobbies-divider' />
+                </>
             )}
-            <button onClick={() => console.log(lobbies)}></button>
         </div>
     )
 }

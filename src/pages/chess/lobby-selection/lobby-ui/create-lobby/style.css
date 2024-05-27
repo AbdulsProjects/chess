@@ -1,6 +1,15 @@
+.create-lobby-container {
+    padding: 10px;
+}
+
 .lobby-ui-row > label {
     position: relative;
     display: block;
+}
+
+.lobby-ui-row > input {
+    height: 30px;
+    width: 80%;
 }
 
 .lobby-ui-row {
