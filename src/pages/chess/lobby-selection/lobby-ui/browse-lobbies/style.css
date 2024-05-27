@@ -1,3 +1,8 @@
+.browse-lobbies-main-container {
+    height: 100%;
+    position: relative;
+}
+
 .browse-lobbies-header {
     height: 40px;
     width: 100%;
@@ -19,7 +24,13 @@
     height: 20px;
     width: auto;
     position: relative;
+}
 
+.all-lobbies-container {
+    white-space: nowrap;
+    height: calc(100% - 40px);
+    position: relative;
+    overflow: auto;
 }
 
 .lobby-container {

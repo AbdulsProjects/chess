@@ -53,7 +53,7 @@ export const BrowseLobbies = (props: Props) => {
     const JoinlobbyButton = (lobbyId: string) => {
         
         const lobby = lobbies[lobbyId];
-
+        
         if (lobby.lobbyPassword) {
             console.log(onlineState);
         } else {
@@ -75,29 +75,31 @@ export const BrowseLobbies = (props: Props) => {
     console.log(onlineState);
 
     return (
-        <div>
+        <div className='browse-lobbies-main-container'>
             <div className='browse-lobbies-header'>
                 <button className='refresh-button chess-button' onClick={() => RefreshLobbies()}><img src="img/icon-refresh.webp" alt="Refresh" /></button>
             </div>
-            {Object.keys(lobbies).map(lobbyId => 
-                <>
-                    <div className='lobby-container'>
-                        <div>
-                            <div className='lobby-container-row'>
-                                <p>Lobby Name: {lobbies[lobbyId].lobbyName}</p>
+            <div className='all-lobbies-container'>
+                {Object.keys(lobbies).map(lobbyId => 
+                    <>
+                        <div className='lobby-container'>
+                            <div>
+                                <div className='lobby-container-row'>
+                                    <p>Lobby Name: {lobbies[lobbyId].lobbyName}</p>
+                                </div>
+                                <div className='lobby-container-row'>
+                                    <p>Game Type: {lobbies[lobbyId].gameType}</p>
+                                </div>
+                                <div className='lobby-container-row'>
+                                    <p>Password: <input type='checkbox' checked={lobbies[lobbyId].lobbyPassword === 'true'}/></p>
+                                </div>
                             </div>
-                            <div className='lobby-container-row'>
-                                <p>Game Type: {lobbies[lobbyId].gameType}</p>
-                            </div>
-                            <div className='lobby-container-row'>
-                                <p>Password: <input type='checkbox' checked={lobbies[lobbyId].lobbyPassword === 'true'}/></p>
-                            </div>
+                            <button className='chess-button' onClick={() => JoinlobbyButton(lobbyId)}>Join</button>
                         </div>
-                        <button className='chess-button' onClick={() => JoinlobbyButton(lobbyId)}>Join</button>
-                    </div>
-                    <hr className='browse-lobbies-divider' />
-                </>
-            )}
+                        <hr className='browse-lobbies-divider' />
+                    </>
+                )}
+            </div>
         </div>
     )
 }
