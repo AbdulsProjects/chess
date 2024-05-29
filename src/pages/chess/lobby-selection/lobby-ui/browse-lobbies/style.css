@@ -65,3 +65,8 @@
 .browse-lobbies-divider {
     margin: 0px;
 }
+
+.browse-lobbies-game-type {
+    display: inline;
+    text-decoration: underline dotted;
+}

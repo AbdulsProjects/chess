@@ -2,6 +2,7 @@ import { Dispatch, SetStateAction, useContext, useEffect, useState } from 'react
 import './style.css'
 import { IWsContext, WsContext } from '../../../../../contexts/wsContext';
 import { Lobbies } from '../../../../../server/socket';
+import { PasswordPopup } from './password-popup';
 
 interface Props {
     setShowLobbyUi: Dispatch<SetStateAction<boolean>>,
@@ -13,6 +14,8 @@ export const BrowseLobbies = (props: Props) => {
     const [lobbies, setLobbies] = useState<Lobbies>({});
 
     const { onlineState, createCallback }  = useContext(WsContext) as IWsContext;
+
+    const [showPasswordInput, setShowPasswordInput] = useState(true);
 
     //Returning the list of lobbies
     useEffect(() => {
@@ -72,10 +75,15 @@ export const BrowseLobbies = (props: Props) => {
             onlineState.wsConn!.send(JSON.stringify(payLoad));
     }
 
-    console.log(onlineState);
+    const gameTypeAbbr = {
+        sandbox: 'Either player can place any piece anywhere',
+        suggestion: 'One player decides where all pieces will start',
+        restricted: 'Sandbox but only allow pieces to start on the first 2 rows for each player'
+    }
 
     return (
         <div className='browse-lobbies-main-container'>
+            {showPasswordInput && <PasswordPopup setShowPasswordInput={setShowPasswordInput}/>}
             <div className='browse-lobbies-header'>
                 <button className='refresh-button chess-button' onClick={() => RefreshLobbies()}><img src="img/icon-refresh.webp" alt="Refresh" /></button>
             </div>
@@ -88,7 +96,7 @@ export const BrowseLobbies = (props: Props) => {
                                     <p>Lobby Name: {lobbies[lobbyId].lobbyName}</p>
                                 </div>
                                 <div className='lobby-container-row'>
-                                    <p>Game Type: {lobbies[lobbyId].gameType}</p>
+                                    <p>Game Type: <p className='browse-lobbies-game-type' title={gameTypeAbbr[lobbies[lobbyId].gameType as 'sandbox' | 'suggestion' | 'restricted']}>{lobbies[lobbyId].gameType}</p></p>
                                 </div>
                                 <div className='lobby-container-row'>
                                     <p>Password: <input type='checkbox' checked={lobbies[lobbyId].lobbyPassword === 'true'}/></p>

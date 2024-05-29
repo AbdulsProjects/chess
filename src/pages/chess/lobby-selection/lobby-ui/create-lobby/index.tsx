@@ -70,7 +70,7 @@ export const CreateLobby = (props: Props) => {
                 <input type='radio' id='suggestion' name='game_type' value='suggestion' />
                 <label htmlFor='suggestion' title='One player decides where all pieces will start'>Suggestion</label>
                 <input type='radio' id='restricted' name='game_type' value='restricted' />
-                <label htmlFor='restricted' title='Only allow pieces to start on the first 2 rows for each player'>Restricted</label>
+                <label htmlFor='restricted' title='Sandbox but only allow pieces to start on the first 2 rows for each player'>Restricted</label>
             </div>
             <div className='create-lobby-button-container'>
                 <button className='chess-button create-lobby-button' onClick={() => CreateLobbyButton()}>Create Lobby</button>
