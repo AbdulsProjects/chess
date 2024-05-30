@@ -15,7 +15,9 @@ export const BrowseLobbies = (props: Props) => {
 
     const { onlineState, createCallback }  = useContext(WsContext) as IWsContext;
 
-    const [showPasswordInput, setShowPasswordInput] = useState(true);
+    const [showPasswordInput, setShowPasswordInput] = useState(false);
+
+    const [joiningLobbyId, setJoiningLobbyId] = useState<string | null>(null);
 
     //Returning the list of lobbies
     useEffect(() => {
@@ -42,12 +44,20 @@ export const BrowseLobbies = (props: Props) => {
         }
     }, [onlineState])
 
+    //Clearing the joiningLobbyId if the password popup isnt visible
+    useEffect(() => {
+        if (!showPasswordInput) {
+            setJoiningLobbyId(null);
+        }
+    }, [showPasswordInput]);
+
     const JoinLobby = (lobbyId: string) => {
         
         const payLoad = {
             method: 'join',
             clientId: onlineState.clientId,
-            lobbyId: lobbyId
+            lobbyId: lobbyId,
+            lobbyPassword: null
         };
         
         onlineState.wsConn!.send(JSON.stringify(payLoad));
@@ -58,9 +68,9 @@ export const BrowseLobbies = (props: Props) => {
         const lobby = lobbies[lobbyId];
         
         if (lobby.lobbyPassword) {
-            console.log(onlineState);
+            setJoiningLobbyId(lobbyId);
+            setShowPasswordInput(true);
         } else {
-            console.log('joining lobby')
             JoinLobby(lobbyId);
         }
     }
@@ -83,7 +93,7 @@ export const BrowseLobbies = (props: Props) => {
 
     return (
         <div className='browse-lobbies-main-container'>
-            {showPasswordInput && <PasswordPopup setShowPasswordInput={setShowPasswordInput}/>}
+            {showPasswordInput && <PasswordPopup setShowPasswordInput={setShowPasswordInput} joiningLobbyId={joiningLobbyId}/>}
             <div className='browse-lobbies-header'>
                 <button className='refresh-button chess-button' onClick={() => RefreshLobbies()}><img src="img/icon-refresh.webp" alt="Refresh" /></button>
             </div>
@@ -107,6 +117,7 @@ export const BrowseLobbies = (props: Props) => {
                         <hr className='browse-lobbies-divider' />
                     </>
                 )}
+                <button onClick={() => console.log(joiningLobbyId)}></button>
             </div>
         </div>
     )
