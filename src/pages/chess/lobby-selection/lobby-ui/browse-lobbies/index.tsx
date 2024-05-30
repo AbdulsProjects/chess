@@ -117,7 +117,6 @@ export const BrowseLobbies = (props: Props) => {
                         <hr className='browse-lobbies-divider' />
                     </>
                 )}
-                <button onClick={() => console.log(joiningLobbyId)}></button>
             </div>
         </div>
     )
