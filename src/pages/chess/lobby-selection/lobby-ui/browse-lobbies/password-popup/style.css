@@ -6,7 +6,34 @@
     top: 0;
     left: 0;
     z-index: 1;
-    opacity: 40%;
+}
+
+.fade-in {
+    animation: fade-in 0.8s forwards;
+}
+
+@keyframes fade-in {
+    0%{
+        opacity: 0;
+    }
+    
+    100%{
+        opacity: 0.4;
+    }
+}
+
+.fade-out {
+    animation: fade-out 0.8s forwards;
+}
+
+@keyframes fade-out {
+    0%{
+        opacity: 0.4;
+    }
+    
+    100%{
+        opacity: 0;
+    }
 }
 
 .password-popup-main-container {
@@ -17,12 +44,15 @@
     z-index: 2;
     left: calc((100vw - 900px) / 2);
     top: calc((100vh - 150px) / 3);
-    animation: popup 0.5s;
     border: 2px solid black;
     border-radius: 0 0 5px 5px;
 }
 
-@keyframes popup {
+.pop-up {
+    animation: pop-up 0.5s forwards;
+}
+
+@keyframes pop-up {
     0%{
         transform: scale(0);
     }
@@ -30,7 +60,20 @@
     100%{
         transform: scale(1);
     }
+}
 
+.close-pop-up {
+    animation: close-pop-up 0.5s forwards;
+}
+
+@keyframes close-pop-up {
+    0%{
+        transform: scale(1);
+    }
+    
+    100%{
+        transform: scale(0);
+    }
 }
 
 .password-popup-header {

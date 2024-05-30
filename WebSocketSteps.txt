@@ -1,0 +1,14 @@
+Have a local mode that works as it currently does, but add the option to create a lobby? This may mean the code needs to be duplicated, so potentially scrap the local idea
+
+1) Clients connect to the server via handshakes and get assigned their IDs
+2) Client "A" presses create lobby, which sends a request to create a lobby to the server
+3) The lobby is created and assigned an ID, which is passed back to "A"
+4) "A" sends a request to join the lobby
+5) After joining, "A" can perform any action besides starting the game (e.g. board setup). This will only affect local state
+6) "A" can send the lobby ID to "B", allowing "B" to join
+7) Once "A" and "B" are in the lobby, either player can send a start game request. This notifies the other player, showing them the proposed board and allowing them to accept / decline
+8) The game is played out using actions passed to the server which manages the true state, and passes the board back after each move along with viable moves. The highlighting of moveable tiles is handled locally
+9) Once a winner is decided, the game is closed but the lobby remains open, allowing the players to create a new board state and request another game
+
+KNOWN ISSUES
+Bad actors can most likely break the server by modifying the intended JSON structure sent to the server due to the JSON.stringify (basically just an injection attack)

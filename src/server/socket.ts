@@ -90,7 +90,21 @@ wsServer.on('request', request => {
 
                 //Joining a game
                 case 'join': {
+                    
                     const lobbyId: string = result.lobbyId;
+
+                    //Lobby password doesn't match the passed password
+                    if (lobbies[lobbyId].lobbyPassword !== result.lobbyPassword) {
+                        const payLoad = {
+                            method: 'join',
+                            game: null,
+                            status: 'failed',
+                            message: 'Incorrect password'
+                        };
+    
+                        clients[clientId].connection.send(JSON.stringify(payLoad));
+                        return;
+                    }
 
                     //Lobby is already full
                     if (lobbies[lobbyId].blackPlayer && lobbies[lobbyId].whitePlayer) {
@@ -130,8 +144,6 @@ wsServer.on('request', request => {
                 case 'return-lobbies': {
                     
                     const obfuscatedLobbies: Lobbies = structuredClone(lobbies);
-
-                    console.log(lobbies);
 
                     for (var key of Object.keys(obfuscatedLobbies)) {
                         obfuscatedLobbies[key].lobbyPassword = obfuscatedLobbies[key].lobbyPassword === null ? null : 'true'
