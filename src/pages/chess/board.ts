@@ -270,8 +270,6 @@ export class Board {
 
         //Calculating the possible moves for the next player's next turn if this was the last promotion (may not be the last promotion when the game is started)
         if (!lastPromotion) { this.calculatePlayerMoves(promotionSquare.colour === 'white' ? 'black' : 'white'); }
-
-        this.checkForLoss(promotionSquare.colour === 'white' ? 'black' : 'white', true);
     };
 
     //Returning all moves that currently put the specified king in check
