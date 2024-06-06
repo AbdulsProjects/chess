@@ -12,10 +12,6 @@ import { Board, Square, TargetingSquare } from "../board"
 //Make a click handler work for placing pieces too
 //Add a bin div element that can be used to remove pieces (add a double-click handler that does the same)
 
-//CLASS TODO:
-//1) Fix the checkmate checker
-//2) Fix binning pieces
-
 export interface CapturedPiece {
     piece: string,
     points: number,
@@ -111,11 +107,15 @@ export function Chess() {
     const PromotePiece = (newPiece: Piece) => {
 
         //Grabbing the piece to promote
+        const newBoard = board.clone();
         const promotionSquareId = gameState.promotions.white.length > 0 ? gameState.promotions.white[0] : gameState.promotions.black[0];
+        const promotionSquare = newBoard.squares.find(square => square.id === promotionSquareId)!;
 
         //Promoting the piece
-        const newBoard = board.clone();
         newBoard.promotePiece(newPiece, promotionSquareId, gameState.promotions.white.length + gameState.promotions.black.length <= 1);
+
+        CheckForLoss(newBoard, 'white', !promotionSquare.firstTurn);
+        CheckForLoss(newBoard, 'black', !promotionSquare.firstTurn);
 
         //Updating state
         setBoardAndHtml(newBoard);
@@ -163,7 +163,7 @@ export function Chess() {
         setBoard(newBoard);
     };
 
-    const CheckForLoss = (board: Board, colour: 'black' | 'white') => {
+    const CheckForLoss = (board: Board, colour: 'black' | 'white', gameInProgress = gameState.inProgress) => {
 
         //Removing the previous check / check mate styling
         Array.from(document.querySelectorAll('.highlight-check')).forEach(
@@ -178,7 +178,7 @@ export function Chess() {
         const validMove = Boolean(pieces.find(square => square.targeting.find(move => move.moveable)));
         const kingSquare = pieces.find(square => square.piece === 'king')!;
         const checkMoves = board.returnCheckMoves(kingSquare);
-        board.checkForLoss(colour, gameState.inProgress);
+        board.checkForLoss(colour, gameInProgress);
 
         if (board.outcome.winner === (colour === 'black' ? 'white' : 'black')) {
             document.getElementById(kingSquare.id)!.classList.add('highlight-check-mate');
