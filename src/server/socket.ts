@@ -1,7 +1,7 @@
 import http from 'http';
 import { connection, server } from 'websocket';
 import crypto from 'crypto';
-import { Square } from '../utils/models';
+import { Board } from '../pages/chess/board';
 
 interface Clients {
     [clientId: string]: {
@@ -18,7 +18,7 @@ export interface Lobbies {
         gameType: string,
         whitePlayer: string | null,
         blackPlayer: string | null,
-        board: Square[]
+        board: Board | null
     }
 }
 
@@ -72,7 +72,7 @@ wsServer.on('request', request => {
                         gameType: result.gameType,
                         whitePlayer: clientId,
                         blackPlayer: null,
-                        board: []
+                        board: null
                     };
 
                     clients[clientId].lobbyId = lobbyId;

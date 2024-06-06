@@ -1,7 +1,7 @@
-import { GameOutcome } from '..'
+import { Outcome } from '../../board';
 import './style.css'
 
-export const GameOver = (props: {outcome: GameOutcome}) => {
+export const GameOver = (props: {outcome: Outcome}) => {
 
     const Capitalize = (word: string): string => {
         return word.charAt(0).toUpperCase() + word.slice(1);

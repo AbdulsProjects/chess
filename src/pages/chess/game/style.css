@@ -1,4 +1,5 @@
-.main-container {
+.chess-main-container {
+    grid-area: 1 / 1 / -1 / -1;
     display: grid;
     grid-template-columns: minmax(450px, 1fr) 675px minmax(450px, 1fr);
     grid-template-rows: 200px minmax(700px, calc(100vh - 300px));
@@ -69,6 +70,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 999;
 }
 
 img {

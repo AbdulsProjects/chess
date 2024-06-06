@@ -65,11 +65,11 @@ export const CreateLobby = (props: Props) => {
             </div>
             <label htmlFor=''>Game type</label>
             <div className="lobby-ui-radio-container">
-                <input type='radio' id='sandbox' name='game_type' value='sandbox' />
+                <input type='radio' id='sandbox' name='game_type' value='sandbox' disabled/>
                 <label htmlFor='sandbox' title='Either player can place any piece anywhere'>Sandbox</label>
-                <input type='radio' id='suggestion' name='game_type' value='suggestion' />
+                <input type='radio' id='suggestion' name='game_type' value='suggestion' checked={true}/>
                 <label htmlFor='suggestion' title='One player decides where all pieces will start'>Suggestion</label>
-                <input type='radio' id='restricted' name='game_type' value='restricted' />
+                <input type='radio' id='restricted' name='game_type' value='restricted' disabled/>
                 <label htmlFor='restricted' title='Sandbox but only allow pieces to start on the first 2 rows for each player'>Restricted</label>
             </div>
             <div className='create-lobby-button-container'>
