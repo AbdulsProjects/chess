@@ -54,8 +54,11 @@ interface TargettableSquareReducer {
 };
 
 export interface Outcome {
-    winner: 'black' | 'white' | null, 
-    staleMate: boolean
+    target: Square | null,
+    targettedBy: string[],
+    check: boolean,
+    checkmate: boolean, 
+    stalemate: boolean
 };
 
 export class Board {
@@ -63,7 +66,7 @@ export class Board {
     private _squares: Square[];
     private _outcome: Outcome;
 
-    constructor(squares: Square[], outcome: Outcome = {winner: null, staleMate: false}) {
+    constructor(squares: Square[], outcome: Outcome = {target: null, targettedBy: [], check: false, checkmate: false, stalemate: false}) {
         this._squares = squares;
         this._outcome = outcome;
     };
@@ -100,8 +103,8 @@ export class Board {
         this.calculatePlayerMoves('black');
 
         //Checking for immediate checks / check mates
-        this.checkForLoss('white', false);
-        this.checkForLoss('black', false);
+        this.checkForChecks('white', false);
+        this.checkForChecks('black', false);
 
         return {
             message: '',
@@ -163,9 +166,11 @@ export class Board {
         //Removing the targetted by array for the moved to square (this is recalculated in RecalculateAllMoves)
         this._squares.find(square => square.id === newSquareId)!.targetedBy[colour] = [];
 
-        //Recalculating possible moves
+        //Recalculating possible moves 
         this.recalculateAllMoves(colour);
 
+        //Checking if the player has won
+        this.checkForChecks(colour === 'white' ? 'black' : 'white', true);
     };
 
     //Performing a castling move
@@ -211,39 +216,76 @@ export class Board {
     };
 
     //Checking for checkmates / stalemates
-    checkForLoss(colour: 'black' | 'white', gameInProgress: boolean) {
+    checkForChecks(colour: 'black' | 'white', gameInProgress: boolean) {
+
+        //Setting the default outcome
+        let outcome: Outcome = {
+            target: null,
+            targettedBy: [],
+            check: false,
+            checkmate: false,
+            stalemate: false
+        };
 
         const pieces = this._squares.filter(square => square.colour === colour);
         const validMove = Boolean(pieces.find(square => square.targeting.find(move => move.moveable)));
         const kingSquare = pieces.find(square => square.piece === 'king')!;
         const checkMoves = this.returnCheckMoves(kingSquare);
 
-        if (checkMoves.length !== 0 && !validMove) { 
-            this._outcome = {
-                winner: colour === 'black' ? 'white' : 'black',
-                staleMate: false
-            };
-        };
-        
+        //Stalemate
         if (checkMoves.length === 0 && !validMove) { 
             //Black can't start in stale mate as it's white's turn to begin with
             if (gameInProgress || colour === 'white') {
-                this._outcome = {
-                    winner: null,
-                    staleMate: true
+                outcome = {
+                    target: kingSquare,
+                    targettedBy: [],
+                    check: false,
+                    checkmate: false,
+                    stalemate: true
                 };
             };
         };
 
-        if (checkMoves.length !== 0 && validMove) { 
-            //White wins if black starts in check
-            if (!gameInProgress && colour === 'black') {
-                this._outcome = {
-                    winner: 'white',
-                    staleMate: false
+        //The king is currently in check
+        if (checkMoves.length !== 0) {
+
+            const targettedBy = checkMoves.map(move => move.source);
+
+            //Checkmate
+            if (!validMove) { 
+                outcome = {
+                    target: kingSquare,
+                    targettedBy: targettedBy,
+                    check: true,
+                    checkmate: true,
+                    stalemate: false
+                };
+            };
+            
+            //Check
+            if (validMove) { 
+                //White wins if black starts in check
+                if (!gameInProgress && colour === 'black') {
+                    outcome = {
+                        target: kingSquare,
+                        targettedBy: targettedBy,
+                        check: true,
+                        checkmate: true,
+                        stalemate: false
+                    };
+                } else {
+                    outcome = {
+                        target: kingSquare,
+                        targettedBy: targettedBy,
+                        check: true,
+                        checkmate: false,
+                        stalemate: false
+                    };
                 };
             };
         };
+
+        this._outcome = outcome;
     };
 
     //Returning all squares that are due a promotion
@@ -287,7 +329,7 @@ export class Board {
             const targetSquareIndex = this._squares.findIndex(square => square.id === promotionSquare.targeting[i].target);
             const targetMoveIndex = this._squares[targetSquareIndex].targetedBy[promotionSquare.colour!].findIndex(move => move.source === promotionSquare.id);
             this._squares[targetSquareIndex].targetedBy[promotionSquare.colour!].splice(targetMoveIndex, 1);
-        }            
+        };            
         const promotionSquareIndex = this._squares.findIndex(square => square.id === promotionSquareId);
         this._squares[promotionSquareIndex].targeting = [];
 
@@ -295,8 +337,13 @@ export class Board {
         const moves = this.returnPieceMoves(this._squares[promotionSquareIndex]);
         this.mutateBoardWithMoves(moves, promotionSquareId);
 
-        //Calculating the possible moves for the next player's next turn if this was the last promotion (may not be the last promotion when the game is started)
-        if (!lastPromotion) { this.calculatePlayerMoves(promotionSquare.colour === 'white' ? 'black' : 'white'); }
+        //Calculating the possible moves for the next player's next turn and checks for losses if this was the last promotion (may not be the last promotion when the game is started)
+        if (!lastPromotion) { 
+            this.calculatePlayerMoves(promotionSquare.colour === 'white' ? 'black' : 'white');
+            const firstTurn = promotionSquare.firstTurn;
+            this.checkForChecks('white', !firstTurn); 
+            this.checkForChecks('black', !firstTurn); 
+        };
     };
 
     //Returning all moves that currently put the specified king in check
@@ -691,4 +738,4 @@ export class Board {
             {squareId: 'H2', pieceId: 'pawn', colour: 'white'},
         ], false);
     };
-}
+};

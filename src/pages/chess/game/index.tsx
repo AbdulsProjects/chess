@@ -105,7 +105,31 @@ export function Chess() {
 
     }, [board, gameState.inProgress]);
 
-    
+    //Checking if a player has won when the board is updated
+    useEffect(() => {
+
+        //Removing the previous check / check mate styling
+        Array.from(document.querySelectorAll('.highlight-check')).forEach(
+            square => square.classList.remove('highlight-check')
+        );
+
+        Array.from(document.querySelectorAll('.highlight-check-mate')).forEach(
+            square => square.classList.remove('highlight-check-mate')
+        );
+
+        //Adding the check / checkmate styling if there's a check / checkmate
+        if (board.outcome.checkmate || board.outcome.check) {
+            
+            const className = board.outcome.checkmate ? 'highlight-check-mate' : 'highlight-check';
+
+            document.getElementById(board.outcome.target!.id)!.classList.add(className);
+            
+            for (let i = 0; i < board.outcome.targettedBy.length; i++) {
+                document.getElementById(board.outcome.targettedBy[i])!.classList.add(className);
+            };
+        };
+    }, [board]);
+
     //General Functions
     
     //This is used to update the HTML whenever the board in state is updated
@@ -154,51 +178,17 @@ export function Chess() {
         //Grabbing the piece to promote
         const newBoard = board.clone();
         const promotionSquareId = gameState.promotions.white.length > 0 ? gameState.promotions.white[0] : gameState.promotions.black[0];
-        const promotionSquare = newBoard.squares.find(square => square.id === promotionSquareId)!;
 
         //Promoting the piece
         newBoard.promotePiece(newPiece, promotionSquareId, gameState.promotions.white.length + gameState.promotions.black.length <= 1);
 
-        CheckForLoss(newBoard, 'white', !promotionSquare.firstTurn);
-        CheckForLoss(newBoard, 'black', !promotionSquare.firstTurn);
-
         //Updating state
         setBoardAndHtml(newBoard);
-    };
-    
-    const CheckForLoss = (board: Board, colour: 'black' | 'white', gameInProgress = gameState.inProgress) => {
-
-        //Removing the previous check / check mate styling
-        Array.from(document.querySelectorAll('.highlight-check')).forEach(
-            square => square.classList.remove('highlight-check')
-        );
-
-        Array.from(document.querySelectorAll('.highlight-check-mate')).forEach(
-            square => square.classList.remove('highlight-check-mate')
-        );
-
-        const pieces = board.squares.filter(square => square.colour === colour);
-        const validMove = Boolean(pieces.find(square => square.targeting.find(move => move.moveable)));
-        const kingSquare = pieces.find(square => square.piece === 'king')!;
-        const checkMoves = board.returnCheckMoves(kingSquare);
-        board.checkForLoss(colour, gameInProgress);
-
-        if (board.outcome.winner === (colour === 'black' ? 'white' : 'black')) {
-            document.getElementById(kingSquare.id)!.classList.add('highlight-check-mate');
-        };
-
-        if (checkMoves.length !== 0 && validMove) { 
-            document.getElementById(kingSquare.id)!.classList.add('highlight-check');
-            for (let i = 0; i < checkMoves.length; i++) {
-                const targetingSquare = document.getElementById(checkMoves[i].source)!;
-                if (!targetingSquare.classList.contains('highlight-check')) { targetingSquare.classList.add('highlight-check') }
-            };
-        };
     };
 
     //Returning a boolean to specify if the interactivity should be disabled
     const DisableInteractivity = (): boolean => {
-        return gameStateRef.current.promotions.black.length > 0 || gameStateRef.current.promotions.white.length > 0 || boardRef.current!.outcome.staleMate || Boolean(boardRef.current!.outcome.winner);
+        return gameStateRef.current.promotions.black.length > 0 || gameStateRef.current.promotions.white.length > 0 || boardRef.current!.outcome.stalemate || Boolean(boardRef.current!.outcome.checkmate);
     };
 
     //Event Handlers
@@ -286,7 +276,6 @@ export function Chess() {
             }
             
             //Updating the state / HTML
-            CheckForLoss(newBoard, colour === 'white' ? 'black' : 'white');
             setBoardAndHtml(newBoard);    
             RemoveHighlights();
             setGameState(prevState => ({
@@ -345,12 +334,6 @@ export function Chess() {
 
         setBoard(newBoard);
 
-        //Checking for immediate checks / check mates
-        CheckForLoss(newBoard, 'white');
-        CheckForLoss(newBoard, 'black');
-
-        if (newBoard.outcome.winner !== null || newBoard.outcome.staleMate) { return; }
-
         //Updating state
         setGameState(prevState => ({
             ...prevState,
@@ -404,8 +387,8 @@ export function Chess() {
     return (
         <div className='chess-main-container' onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
             {gameState.inProgress && <CapturedPieces position='left' capturedPieces={gameState.capturedPieces}/>}
-            {(board.outcome.winner || board.outcome.staleMate) && <GameOver outcome={board.outcome}/>}
-            {(!gameState.inProgress && !(board.outcome.winner || board.outcome.staleMate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} />}
+            {(board.outcome.checkmate || board.outcome.stalemate) && <GameOver outcome={board.outcome}/>}
+            {(!gameState.inProgress && !(board.outcome.checkmate || board.outcome.stalemate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} />}
             {(gameState.promotions.white.length > 0 || gameState.promotions.black.length > 0) && gameState.inProgress && <Promotion PromotePiece={PromotePiece} colour={gameState.promotions.white.length > 0 ? 'white' : 'black'}/>}
             <div className="chess-container">
                 <div className="y-labels">
