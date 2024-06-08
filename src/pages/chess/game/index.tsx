@@ -12,6 +12,8 @@ import { Board, Square, TargetingSquare } from "../board"
 //Make a click handler work for placing pieces too
 //Add a bin div element that can be used to remove pieces (add a double-click handler that does the same)
 
+//LOOK INTO WHY THE PROMOTION WORKED WITH IMMEDIATE CHECKMATES IN THE CURRENT PROD VERSION AND NOT THIS ONE WITHOUT THE OVERRIDE
+
 export interface CapturedPiece {
     piece: string,
     points: number,
@@ -103,6 +105,49 @@ export function Chess() {
 
     }, [board, gameState.inProgress]);
 
+    
+    //General Functions
+    
+    //This is used to update the HTML whenever the board in state is updated
+    const setBoardAndHtml = (newBoard: Board) => {
+        
+        //Determining what squares have changed in the state
+        const differentSquares: Square[] = newBoard.squares.filter((square) => {
+            const prevSquare: Square = boardRef.current!.squares.find(prevSquare => prevSquare.id === square.id)!;
+            return square.piece !== prevSquare.piece || square.colour !== prevSquare.colour;
+            })
+            
+            //Updating the HTML of the changed squares
+            differentSquares.map((square: Square): void => {
+                
+                const squareElement = document.getElementById(square.id)!;
+                
+                squareElement!.innerHTML = '';
+                //Exitting if a piece was removed instead of replaced
+                if (!square.piece) { return undefined; }
+                
+                //Handling squares where a piece was added
+                //Generating the new img element
+                let pieceImg = document.createElement('img');
+                pieceImg.id = square.id + ' Piece';
+                pieceImg.alt = square.colour + ' ' + square.piece
+                pieceImg.src = 'img/' + square.colour + '_' + square.piece + '.png'
+                pieceImg.addEventListener("dragstart", (e: any) => DragPiece(e, square.colour!, square.piece!));
+                if (gameState.inProgress) {
+                    pieceImg.addEventListener("click", (e) => SelectPiece(e));
+                    pieceImg.addEventListener("dragstart", (e) => SelectPiece(e));
+                    }
+                    
+                    //Appending the new img element to the square div
+                    squareElement.appendChild(pieceImg);
+                    
+                    return undefined;
+                    })
+                    
+                    //Updating the board in state
+                    setBoard(newBoard);
+    };
+    
     //Used to promote a piece
     const PromotePiece = (newPiece: Piece) => {
 
@@ -120,49 +165,7 @@ export function Chess() {
         //Updating state
         setBoardAndHtml(newBoard);
     };
-
-    //General Functions
-
-    //This is used to update the HTML whenever the board in state is updated
-    const setBoardAndHtml = (newBoard: Board) => {
-        
-        //Determining what squares have changed in the state
-        const differentSquares: Square[] = newBoard.squares.filter((square) => {
-            const prevSquare: Square = boardRef.current!.squares.find(prevSquare => prevSquare.id === square.id)!;
-            return square.piece !== prevSquare.piece || square.colour !== prevSquare.colour;
-        })
-
-        //Updating the HTML of the changed squares
-        differentSquares.map((square: Square): void => {
-            
-            const squareElement = document.getElementById(square.id)!;
-            
-            squareElement!.innerHTML = '';
-            //Exitting if a piece was removed instead of replaced
-            if (!square.piece) { return undefined; }
-
-            //Handling squares where a piece was added
-            //Generating the new img element
-            let pieceImg = document.createElement('img');
-            pieceImg.id = square.id + ' Piece';
-            pieceImg.alt = square.colour + ' ' + square.piece
-            pieceImg.src = 'img/' + square.colour + '_' + square.piece + '.png'
-            pieceImg.addEventListener("dragstart", (e: any) => DragPiece(e, square.colour!, square.piece!));
-            if (gameState.inProgress) {
-                pieceImg.addEventListener("click", (e) => SelectPiece(e));
-                pieceImg.addEventListener("dragstart", (e) => SelectPiece(e));
-            }
-
-            //Appending the new img element to the square div
-            squareElement.appendChild(pieceImg);
-
-            return undefined;
-       })
-
-        //Updating the board in state
-        setBoard(newBoard);
-    };
-
+    
     const CheckForLoss = (board: Board, colour: 'black' | 'white', gameInProgress = gameState.inProgress) => {
 
         //Removing the previous check / check mate styling
@@ -319,69 +322,27 @@ export function Chess() {
     //Functions to set up different board types
     const StandardGame = () => {
         const newBoard = board.clone();
-        newBoard.clearBoard();
-        newBoard.addPiece([
-            {squareId: 'A8', pieceId: 'rook', colour: 'black'},
-            {squareId: 'B8', pieceId: 'knight', colour: 'black'},
-            {squareId: 'C8', pieceId: 'bishop', colour: 'black'},
-            {squareId: 'D8', pieceId: 'queen', colour: 'black'},
-            {squareId: 'E8', pieceId: 'king', colour: 'black'},
-            {squareId: 'F8', pieceId: 'bishop', colour: 'black'},
-            {squareId: 'G8', pieceId: 'knight', colour: 'black'},
-            {squareId: 'H8', pieceId: 'rook', colour: 'black'},
-            {squareId: 'A7', pieceId: 'pawn', colour: 'black'},
-            {squareId: 'B7', pieceId: 'pawn', colour: 'black'},
-            {squareId: 'C7', pieceId: 'pawn', colour: 'black'},
-            {squareId: 'D7', pieceId: 'pawn', colour: 'black'},
-            {squareId: 'E7', pieceId: 'pawn', colour: 'black'},
-            {squareId: 'F7', pieceId: 'pawn', colour: 'black'},
-            {squareId: 'G7', pieceId: 'pawn', colour: 'black'},
-            {squareId: 'H7', pieceId: 'pawn', colour: 'black'},
-
-            {squareId: 'A1', pieceId: 'rook', colour: 'white'},
-            {squareId: 'B1', pieceId: 'knight', colour: 'white'},
-            {squareId: 'C1', pieceId: 'bishop', colour: 'white'},
-            {squareId: 'D1', pieceId: 'queen', colour: 'white'},
-            {squareId: 'E1', pieceId: 'king', colour: 'white'},
-            {squareId: 'F1', pieceId: 'bishop', colour: 'white'},
-            {squareId: 'G1', pieceId: 'knight', colour: 'white'},
-            {squareId: 'H1', pieceId: 'rook', colour: 'white'},
-            {squareId: 'A2', pieceId: 'pawn', colour: 'white'},
-            {squareId: 'B2', pieceId: 'pawn', colour: 'white'},
-            {squareId: 'C2', pieceId: 'pawn', colour: 'white'},
-            {squareId: 'D2', pieceId: 'pawn', colour: 'white'},
-            {squareId: 'E2', pieceId: 'pawn', colour: 'white'},
-            {squareId: 'F2', pieceId: 'pawn', colour: 'white'},
-            {squareId: 'G2', pieceId: 'pawn', colour: 'white'},
-            {squareId: 'H2', pieceId: 'pawn', colour: 'white'},
-        ], false);
+        newBoard.standardGame();
         setBoardAndHtml(newBoard);
     };
 
     //Functions  to start / play the game
     const StartGame = () => {
-        
-        //Exitting early if there isn't a king of both colours / there are multiple kings of the same colour
-        const whiteKings = board.squares.filter(square => square.piece === 'king' && square.colour === 'white');
-        const blackKings = board.squares.filter(square => square.piece === 'king' && square.colour === 'black');
-        if (blackKings.length + whiteKings.length !== 2 || !blackKings.length || !whiteKings.length) {
-            alert('Each player must have exactly 1 king to start a game');
-            return
-        }
+
+        const newBoard = board.clone();
+        const response = newBoard.startGame();
+        if (!response.succeeded) {
+            alert(response.message);
+            return;
+        };
 
         //Updating the handlers of all pieces
         const pieces = document!.querySelectorAll('[id$=Piece]');//getElementsByClassName("piece");
         for (let i=0; i < pieces.length; i++) {
             pieces[i].addEventListener("click", (e) => SelectPiece(e));
             pieces[i].addEventListener("dragstart", (e) => SelectPiece(e));
-        }
+        };
 
-        const newBoard = board.clone();
-
-        //Calculating possible moves. Needs to be ran 3 times as one colour's moves can affect the others due to checks
-        newBoard.calculatePlayerMoves('black');
-        newBoard.calculatePlayerMoves('white');
-        newBoard.calculatePlayerMoves('black');
         setBoard(newBoard);
 
         //Checking for immediate checks / check mates

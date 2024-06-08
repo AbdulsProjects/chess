@@ -81,6 +81,34 @@ export class Board {
         return new Board(this._squares, this.outcome);
     };
 
+    //Starting the game
+    startGame(): {message: string, succeeded: boolean} {
+        
+        //Exitting early if there isn't a king of both colours / there are multiple kings of the same colour
+        const whiteKings = this.squares.filter(square => square.piece === 'king' && square.colour === 'white');
+        const blackKings = this.squares.filter(square => square.piece === 'king' && square.colour === 'black');
+        if (blackKings.length + whiteKings.length !== 2 || !blackKings.length || !whiteKings.length) {
+            return {
+                message: 'Each player must have exactly 1 king to start a game',
+                succeeded: false
+            };
+        };
+
+        //Calculating possible moves. Needs to be ran 3 times as one colour's moves can affect the others due to checks
+        this.calculatePlayerMoves('black');
+        this.calculatePlayerMoves('white');
+        this.calculatePlayerMoves('black');
+
+        //Checking for immediate checks / check mates
+        this.checkForLoss('white', false);
+        this.checkForLoss('black', false);
+
+        return {
+            message: '',
+            succeeded: true
+        };
+    };
+
     //Adding a piece / pieces
     addPiece(pieces: PiecesToAdd[], gameInProgress: boolean) {
         
@@ -216,7 +244,6 @@ export class Board {
                 };
             };
         };
-
     };
 
     //Returning all squares that are due a promotion
@@ -622,4 +649,46 @@ export class Board {
         this.calculatePlayerMoves(prevColour === 'black' ? 'white' : 'black');
     };
 
+
+    //********************* BOARD PRESETS *********************
+
+    //Standard game
+    standardGame() {
+        this.clearBoard();
+        this.addPiece([
+            {squareId: 'A8', pieceId: 'rook', colour: 'black'},
+            {squareId: 'B8', pieceId: 'knight', colour: 'black'},
+            {squareId: 'C8', pieceId: 'bishop', colour: 'black'},
+            {squareId: 'D8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'E8', pieceId: 'king', colour: 'black'},
+            {squareId: 'F8', pieceId: 'bishop', colour: 'black'},
+            {squareId: 'G8', pieceId: 'knight', colour: 'black'},
+            {squareId: 'H8', pieceId: 'rook', colour: 'black'},
+            {squareId: 'A7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'B7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'C7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'D7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'E7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'F7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'G7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'H7', pieceId: 'pawn', colour: 'black'},
+
+            {squareId: 'A1', pieceId: 'rook', colour: 'white'},
+            {squareId: 'B1', pieceId: 'knight', colour: 'white'},
+            {squareId: 'C1', pieceId: 'bishop', colour: 'white'},
+            {squareId: 'D1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'E1', pieceId: 'king', colour: 'white'},
+            {squareId: 'F1', pieceId: 'bishop', colour: 'white'},
+            {squareId: 'G1', pieceId: 'knight', colour: 'white'},
+            {squareId: 'H1', pieceId: 'rook', colour: 'white'},
+            {squareId: 'A2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'B2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'C2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'D2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'E2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'F2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'G2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'H2', pieceId: 'pawn', colour: 'white'},
+        ], false);
+    };
 }
