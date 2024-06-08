@@ -9,7 +9,7 @@ export const GameOver = (props: {outcome: Outcome}) => {
 
     return (
         <div className='chess-game-over-container top-mid-container'>
-            <p>{props.outcome.staleMate ? 'Stalemate!' : (Capitalize(props.outcome.winner!) + ' has won!')} <a href=''>Play again?</a></p>
+            <p>{props.outcome.stalemate ? 'Stalemate!' : (Capitalize(props.outcome.target!.colour! === 'white' ? 'black' : 'white') + ' has won!')} <a href=''>Play again?</a></p>
         </div>
     )
 }
