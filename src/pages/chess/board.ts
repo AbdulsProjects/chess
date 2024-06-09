@@ -61,14 +61,61 @@ export interface Outcome {
     stalemate: boolean
 };
 
+export interface CapturedPiece {
+    piece: string,
+    points: number,
+    number: number
+};
+
+interface GameState {
+    inProgress: boolean,
+    currentPlayer: 'black' | 'white',
+    promotions: {
+        black: string[],
+        white: string[]
+        },
+    capturedPieces: {
+        black: CapturedPiece[],
+        white: CapturedPiece[]
+    }
+};
+            
+interface RequestMoveResponse {
+    action: 'castle' | 'capture' | 'move-self' | null, 
+    succeeded: Boolean
+};
+
 export class Board {
     
     private _squares: Square[];
     private _outcome: Outcome;
+    private _gameState: GameState;
 
-    constructor(squares: Square[], outcome: Outcome = {target: null, targettedBy: [], check: false, checkmate: false, stalemate: false}) {
+    constructor(
+        squares: Square[], 
+        outcome: Outcome = {
+            target: null, 
+            targettedBy: [], 
+            check: false, 
+            checkmate: false, 
+            stalemate: false
+        },
+        gameState: GameState = {
+            inProgress: false,
+            currentPlayer: 'white',
+            promotions: {
+                black: [],
+                white: []
+            },
+            capturedPieces: {
+                black: [],
+                white: []
+            }
+        }
+    ) {
         this._squares = squares;
         this._outcome = outcome;
+        this._gameState = gameState;
     };
 
     get squares() {
@@ -79,6 +126,10 @@ export class Board {
         return this._outcome;
     };
 
+    get gameState() {
+        return this._gameState;
+    };
+    
     //Cloning the object so state isn't mutated
     clone(): Board {
         return new Board(this._squares, this.outcome);
@@ -105,6 +156,11 @@ export class Board {
         //Checking for immediate checks / check mates
         this.checkForChecks('white', false);
         this.checkForChecks('black', false);
+
+        this._gameState = {
+            ...this._gameState,
+            inProgress: true
+        };
 
         return {
             message: '',
@@ -171,6 +227,66 @@ export class Board {
 
         //Checking if the player has won
         this.checkForChecks(colour === 'white' ? 'black' : 'white', true);
+    };
+
+
+    //Validating and executing the move
+    requestMove(sourceSquare: Square, targetSquare: Square): RequestMoveResponse {
+        
+        //Setting the default response value
+        let response: RequestMoveResponse = {
+            action: null,
+            succeeded: false
+        };
+
+        if(this._gameState.inProgress) {
+            //Returning if trying to grab the other player's piece
+            const currentPlayer = this._gameState.currentPlayer;
+
+            if (currentPlayer !== this._gameState.currentPlayer) { return response; }
+
+            //Returning if trying to move to an invalid square
+            const move = sourceSquare.targeting.find(targettingSquares => targettingSquares.target === targetSquare.id && targettingSquares.moveable);
+            if (!move) { return response; }
+
+            //Checking if there is a piece in the target square, and appending/updating captured squares if there is
+            if (move.capture) {
+                if (!this._gameState.capturedPieces[currentPlayer].find(piece => piece.piece === targetSquare.piece!)) {
+                    const piecePoints = definedPieces.find(piece => piece.id === targetSquare.piece!)!.points;
+                    this._gameState.capturedPieces[currentPlayer].push({piece: targetSquare.piece!, points: piecePoints, number: 1});
+                } else {
+                    this._gameState.capturedPieces[currentPlayer].find(piece => piece.piece === targetSquare.piece!)!.number += 1;
+                };
+            
+            response = {
+                action: 'capture',
+                succeeded: true
+            };
+
+            //Castling
+            } else if (move.castling) {
+                this.castlePiece(move, currentPlayer);
+
+                response = {
+                    action: 'castle',
+                    succeeded: true
+                };
+
+            //Moving
+            } else {
+                this.movePiece(sourceSquare.id, targetSquare.id);
+
+                response = {
+                    action: 'move-self',
+                    succeeded: true
+                };
+            };
+
+            //Changing the current player
+            this._gameState.currentPlayer = this._gameState.currentPlayer === 'white' ? 'black' : 'white';
+        };
+
+        return response;
     };
 
     //Performing a castling move

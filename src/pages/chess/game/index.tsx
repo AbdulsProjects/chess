@@ -223,7 +223,7 @@ export function Chess() {
         if (colour !== 'black' && colour !== 'white') { return; }
         const piece = e.dataTransfer.getData("Piece");
         const sourceSquareId = e.dataTransfer.getData('squareId');
-        const currentSquare = board.squares.find(square => square.id === sourceSquareId)!;
+        const sourceSquare = board.squares.find(square => square.id === sourceSquareId)!;
 
         //Grabbing the target square, and returning out of the function if the target square is the parent square
         let targetSquare: Square | undefined = undefined;
@@ -238,50 +238,25 @@ export function Chess() {
         const newBoard = board.clone();
         if(gameState.inProgress) {
             //Returning if trying to grab the other player's piece
-            if (colour !== gameState.currentPlayer) { return; }
+            if (colour !== newBoard.gameState.currentPlayer) { return; }
 
             //Returning if trying to move to an invalid square
-            const targeting = currentSquare.targeting;
+            const targeting = sourceSquare.targeting;
             const move = targeting.find(targettingSquares => targettingSquares.target === targetSquare!.id && targettingSquares.moveable);
             if (!move) { return; }
 
             //Checking if there is a piece in the target square, and appending/updating captured squares if there is
-            const destSquare = board.squares.find(square => square.id === move.target)!;
-            if (move.capture) {
-                if (!gameStateRef.current.capturedPieces[colour].find(piece => piece.piece === destSquare.piece!)) {
-                    const piecePoints = definedPieces.find(piece => piece.id === destSquare.piece!)!.points;
-                    setGameState(prevState => ({
-                        ...prevState,
-                        capturedPieces: {
-                            ...prevState.capturedPieces,
-                            [colour]: [...prevState.capturedPieces[colour], {piece: destSquare.piece!, points: piecePoints, number: 1}]
-                        }
-                    }))
-                } else {
-                    const newGameState = {...gameStateRef.current};
-                    newGameState.capturedPieces[colour].find(piece => piece.piece === destSquare.piece!)!.number += 1;
-                    setGameState(newGameState);
-                };
-            };
 
-            //Moving the piece
-            if (move.castling) {
-                newBoard.castlePiece(move, colour);
-                const castleAudio = new Audio('audio/castle.mp3');
-                castleAudio.play();
-            } else {
-                newBoard.movePiece(sourceSquareId, targetSquare.id);
-                const moveAudio = new Audio('audio/' + (move.capture ? 'capture' : 'move-self') + '.mp3');
+            const response = newBoard.requestMove(sourceSquare, targetSquare);
+
+            if (response.succeeded && response.action) {
+                const moveAudio = new Audio('audio/' + response.action + '.mp3');
                 moveAudio.play();
-            }
+            };
             
             //Updating the state / HTML
             setBoardAndHtml(newBoard);    
             RemoveHighlights();
-            setGameState(prevState => ({
-                ...prevState,
-                currentPlayer: prevState.currentPlayer === 'white' ? 'black' : 'white'
-            }));
         } else {
             //Adding the piece
             newBoard.addPiece([{squareId: targetSquare.id, pieceId: piece, colour: colour}], gameState.inProgress);
