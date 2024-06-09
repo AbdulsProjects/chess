@@ -72,8 +72,9 @@ interface GameState {
     currentPlayer: 'black' | 'white',
     promotions: {
         black: string[],
-        white: string[]
-        },
+        white: string[],
+        nextPromotion: Square | null
+    },
     capturedPieces: {
         black: CapturedPiece[],
         white: CapturedPiece[]
@@ -105,7 +106,8 @@ export class Board {
             currentPlayer: 'white',
             promotions: {
                 black: [],
-                white: []
+                white: [],
+                nextPromotion: null
             },
             capturedPieces: {
                 black: [],
@@ -154,8 +156,11 @@ export class Board {
         this.calculatePlayerMoves('black');
 
         //Checking for immediate checks / check mates
-        this.checkForChecks('white', false);
-        this.checkForChecks('black', false);
+        this.checkForChecks('white');
+        this.checkForChecks('black', true);
+
+        //Checking for promotions
+        this.checkForPromotions();
 
         this._gameState = {
             ...this._gameState,
@@ -169,7 +174,7 @@ export class Board {
     };
 
     //Adding a piece / pieces
-    addPiece(pieces: PiecesToAdd[], gameInProgress: boolean) {
+    addPiece(pieces: PiecesToAdd[]) {
         
         //Generating the updated board
         this._squares = this._squares.map((square: Square) => {
@@ -183,7 +188,7 @@ export class Board {
                     ...square,
                     colour: piece.colour,
                     piece: piece.pieceId,
-                    firstTurn: !gameInProgress,
+                    firstTurn: !this._gameState.inProgress,
                 }
             }
         })
@@ -217,7 +222,7 @@ export class Board {
 
         //Moving the piece
         this.removePiece(oldSquareId);
-        this.addPiece([{squareId: newSquareId, pieceId: piece, colour: colour}], true);
+        this.addPiece([{squareId: newSquareId, pieceId: piece, colour: colour}]);
         
         //Removing the targetted by array for the moved to square (this is recalculated in RecalculateAllMoves)
         this._squares.find(square => square.id === newSquareId)!.targetedBy[colour] = [];
@@ -225,8 +230,8 @@ export class Board {
         //Recalculating possible moves 
         this.recalculateAllMoves(colour);
 
-        //Checking if the player has won
-        this.checkForChecks(colour === 'white' ? 'black' : 'white', true);
+        //Checking for promotions
+        this.checkForPromotions();
     };
 
 
@@ -284,8 +289,19 @@ export class Board {
                 };
             };
 
-            //Changing the current player
-            this._gameState.currentPlayer = this._gameState.currentPlayer === 'white' ? 'black' : 'white';
+            //Changing the current player and resetting the outcome
+            const newPlayer = currentPlayer === 'white' ? 'black' : 'white';
+            this._gameState.currentPlayer = newPlayer;
+            this._outcome = {
+                target: null,
+                targettedBy: [],
+                check: false,
+                checkmate: false,
+                stalemate: false
+            };
+
+            //Checking if the player has won
+            this.checkForChecks(newPlayer);
         };
 
         return response;
@@ -333,17 +349,8 @@ export class Board {
         });
     };
 
-    //Checking for checkmates / stalemates
-    checkForChecks(colour: 'black' | 'white', gameInProgress: boolean) {
-
-        //Setting the default outcome
-        let outcome: Outcome = {
-            target: null,
-            targettedBy: [],
-            check: false,
-            checkmate: false,
-            stalemate: false
-        };
+    //Checking for checkmates / stalemates. The firstBlackCheck param is used when starting the game as black can't start in check / stalemate since it's white's turn
+    checkForChecks(colour: 'black' | 'white', firstBlackCheck = false) {
 
         const pieces = this._squares.filter(square => square.colour === colour);
         const validMove = Boolean(pieces.find(square => square.targeting.find(move => move.moveable)));
@@ -353,8 +360,8 @@ export class Board {
         //Stalemate
         if (checkMoves.length === 0 && !validMove) { 
             //Black can't start in stale mate as it's white's turn to begin with
-            if (gameInProgress || colour === 'white') {
-                outcome = {
+            if (!firstBlackCheck) {
+                this._outcome = {
                     target: kingSquare,
                     targettedBy: [],
                     check: false,
@@ -371,7 +378,7 @@ export class Board {
 
             //Checkmate
             if (!validMove) { 
-                outcome = {
+                this._outcome = {
                     target: kingSquare,
                     targettedBy: targettedBy,
                     check: true,
@@ -383,8 +390,8 @@ export class Board {
             //Check
             if (validMove) { 
                 //White wins if black starts in check
-                if (!gameInProgress && colour === 'black') {
-                    outcome = {
+                if (firstBlackCheck) {
+                    this._outcome = {
                         target: kingSquare,
                         targettedBy: targettedBy,
                         check: true,
@@ -392,7 +399,7 @@ export class Board {
                         stalemate: false
                     };
                 } else {
-                    outcome = {
+                    this._outcome = {
                         target: kingSquare,
                         targettedBy: targettedBy,
                         check: true,
@@ -402,8 +409,6 @@ export class Board {
                 };
             };
         };
-
-        this._outcome = outcome;
     };
 
     //Returning all squares that are due a promotion
@@ -422,18 +427,27 @@ export class Board {
             if (!square || !definedPieces.find(piece => piece.id === square!.piece)!.canPromote) { continue; }
             this.gameState.promotions.white.push(square.id);
         };
+
+        //Setting the next square to promote
+        if (this._gameState.promotions.white.length > 0) {
+            this._gameState.promotions.nextPromotion = this._squares.find(square => square.id === this._gameState.promotions.white[0])!;
+        } else if (this._gameState.promotions.black.length > 0) {
+            this._gameState.promotions.nextPromotion = this._squares.find(square => square.id === this._gameState.promotions.black[0])!;
+        };
     };
 
     //Promoting a piece
-    promotePiece(newPiece: Piece, promotionSquareId: string, lastPromotion: boolean) {
-        
-        const promotionSquare = this.squares.find(square => square.id === promotionSquareId)!;
+    promotePiece(newPiece: Piece) {
+
+        if (!this._gameState.promotions.nextPromotion) { return; }
+
+        const promotionSquare = this._gameState.promotions.nextPromotion;
 
         //Removing the piece
-        this.removePiece(promotionSquareId);
+        this.removePiece(promotionSquare.id);
 
         //Adding in the new piece
-        this.addPiece([{squareId: promotionSquareId, pieceId: newPiece.id, colour: (promotionSquare.colour as 'black' | 'white')}], true);
+        this.addPiece([{squareId: promotionSquare.id, pieceId: newPiece.id, colour: (promotionSquare.colour as 'black' | 'white')}]);
         
         //Updating the possible moves for newly empty square / the targeted squares
         for (let i = 0; i < promotionSquare.targeting.length; i++) {
@@ -441,19 +455,33 @@ export class Board {
             const targetMoveIndex = this._squares[targetSquareIndex].targetedBy[promotionSquare.colour!].findIndex(move => move.source === promotionSquare.id);
             this._squares[targetSquareIndex].targetedBy[promotionSquare.colour!].splice(targetMoveIndex, 1);
         };            
-        const promotionSquareIndex = this._squares.findIndex(square => square.id === promotionSquareId);
+        const promotionSquareIndex = this._squares.findIndex(square => square.id === promotionSquare.id);
         this._squares[promotionSquareIndex].targeting = [];
 
         //Updating the possible moves for the moved to square
         const moves = this.returnPieceMoves(this._squares[promotionSquareIndex]);
-        this.mutateBoardWithMoves(moves, promotionSquareId);
+        this.mutateBoardWithMoves(moves, promotionSquare.id);
 
+        
+        //Removing the promoted square from the pending promotions
+        this._gameState.promotions[promotionSquare.colour as 'black' | 'white'].shift();
+        this._gameState.promotions.nextPromotion = null;
+        
+        //Setting the next square to promote
+        if (this._gameState.promotions.white.length > 0) {
+            this._gameState.promotions.nextPromotion = this._squares.find(square => square.id === this._gameState.promotions.white[0])!;
+        } else if (this._gameState.promotions.black.length > 0) {
+            this._gameState.promotions.nextPromotion = this._squares.find(square => square.id === this._gameState.promotions.black[0])!;
+        };
+    
         //Calculating the possible moves for the next player's next turn and checks for losses if this was the last promotion (may not be the last promotion when the game is started)
-        if (!lastPromotion) { 
+        if (this.gameState.promotions.white.length + this.gameState.promotions.black.length === 0) { 
             this.calculatePlayerMoves(promotionSquare.colour === 'white' ? 'black' : 'white');
+            
+            //First turn variable used as if a promotion happens at the start of the game, black can't be in check / stalemate since it's white's turn
             const firstTurn = promotionSquare.firstTurn;
-            this.checkForChecks('white', !firstTurn); 
-            this.checkForChecks('black', !firstTurn); 
+            this.checkForChecks('white'); 
+            this.checkForChecks('black', firstTurn); 
         };
     };
 
@@ -847,6 +875,6 @@ export class Board {
             {squareId: 'F2', pieceId: 'pawn', colour: 'white'},
             {squareId: 'G2', pieceId: 'pawn', colour: 'white'},
             {squareId: 'H2', pieceId: 'pawn', colour: 'white'},
-        ], false);
+        ]);
     };
 };

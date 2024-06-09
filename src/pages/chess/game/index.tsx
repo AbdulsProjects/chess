@@ -65,8 +65,8 @@ export function Chess() {
         };
 
         //Adding promotion highlight to the first square in the array
-        if ((board.gameState.promotions.white.length > 0 || board.gameState.promotions.black.length > 0) && board.gameState.inProgress) {
-            const currentPromotionSquare = document.getElementById(board.gameState.promotions.white.length > 0 ? board.gameState.promotions.white[0] : board.gameState.promotions.black[0])!;
+        if (board.gameState.promotions.nextPromotion !== null) {
+            const currentPromotionSquare = document.getElementById(board.gameState.promotions.nextPromotion.id)!;
             currentPromotionSquare.classList.add("highlight-promote");
         };
 
@@ -144,10 +144,9 @@ export function Chess() {
 
         //Grabbing the piece to promote
         const newBoard = board.clone();
-        const promotionSquareId = newBoard.gameState.promotions.white.length > 0 ? newBoard.gameState.promotions.white[0] : newBoard.gameState.promotions.black[0];
 
         //Promoting the piece
-        newBoard.promotePiece(newPiece, promotionSquareId, newBoard.gameState.promotions.white.length + newBoard.gameState.promotions.black.length <= 1);
+        newBoard.promotePiece(newPiece);
 
         //Updating state
         setBoardAndHtml(newBoard);
@@ -223,7 +222,7 @@ export function Chess() {
 
         } else {
             //Adding the piece
-            newBoard.addPiece([{squareId: targetSquare.id, pieceId: piece, colour: colour}], board.gameState.inProgress);
+            newBoard.addPiece([{squareId: targetSquare.id, pieceId: piece, colour: colour}]);
             const addAudio = new Audio('audio/move-self.mp3');
             addAudio.play();
         };
