@@ -12,7 +12,9 @@ import { Board, Square, TargetingSquare } from "../board"
 //Make a click handler work for placing pieces too
 //Add a bin div element that can be used to remove pieces (add a double-click handler that does the same)
 
-//LOOK INTO WHY THE PROMOTION WORKED WITH IMMEDIATE CHECKMATES IN THE CURRENT PROD VERSION AND NOT THIS ONE WITHOUT THE OVERRIDE
+//Try to remove the useRef hook. If I remove it at the moment, the select piece fails as it refences the old board. I think this is because the handler
+//is connected as part of setBoardAndHTML, meaning the old board is passed to the function. Putting the SetState before the handlers are connected doesn't
+//fix as the board update is async, meaning the new value of board isn't ready before the handlers are assigned
 
 export interface CapturedPiece {
     piece: string,
@@ -42,49 +44,19 @@ for (let i = 8; i > 0; i--) {
 
 export function Chess() {
 
-    //Setting up the state
-    interface GameState {
-        inProgress: boolean,
-        currentPlayer: 'black' | 'white',
-        promotions: {
-            black: string[];
-            white: string[]
-        },
-        capturedPieces: {
-            black: CapturedPiece[],
-            white: CapturedPiece[]
-        }
-    };
-
     interface UiVisibility {
         lobby: boolean
     };
 
     //Storing the board / game state in state
     const [board, setBoard] = useState<Board>(new Board(localBoard));
-    const [gameState, setGameState] = useState<GameState>({
-        inProgress: false,
-        currentPlayer: 'white',
-        promotions: {
-            black: [],
-            white: []
-        },
-        capturedPieces: {
-            white: [],
-            black: []
-        }
-    });
 
     const boardRef = useRef<Board>();
-    const gameStateRef = useRef<GameState>(gameState);
 
     boardRef.current = board;
-    gameStateRef.current = gameState;
 
     //Checking for promotions whenever the board is updated
     useEffect(() => {
-    
-        const promotions = boardRef.current!.checkForPromotions();
 
         //Removing promotion highlights from all pieces
         const highlightedSquares = document.getElementsByClassName("highlight-promote");
@@ -93,17 +65,12 @@ export function Chess() {
         };
 
         //Adding promotion highlight to the first square in the array
-        if ((promotions.white.length > 0 || promotions.black.length > 0) && gameState.inProgress) {
-            const currentPromotionSquare = document.getElementById(promotions.white.length > 0 ? promotions.white[0] : promotions.black[0])!;
+        if ((board.gameState.promotions.white.length > 0 || board.gameState.promotions.black.length > 0) && board.gameState.inProgress) {
+            const currentPromotionSquare = document.getElementById(board.gameState.promotions.white.length > 0 ? board.gameState.promotions.white[0] : board.gameState.promotions.black[0])!;
             currentPromotionSquare.classList.add("highlight-promote");
         };
 
-        setGameState(prevState => ({
-            ...prevState,
-            promotions: promotions
-        }));
-
-    }, [board, gameState.inProgress]);
+    }, [board]);
 
     //Checking if a player has won when the board is updated
     useEffect(() => {
@@ -139,37 +106,37 @@ export function Chess() {
         const differentSquares: Square[] = newBoard.squares.filter((square) => {
             const prevSquare: Square = boardRef.current!.squares.find(prevSquare => prevSquare.id === square.id)!;
             return square.piece !== prevSquare.piece || square.colour !== prevSquare.colour;
-            })
+        });
             
-            //Updating the HTML of the changed squares
-            differentSquares.map((square: Square): void => {
+        //Updating the HTML of the changed squares
+        differentSquares.map((square: Square): void => {
+            
+            const squareElement = document.getElementById(square.id)!;
+            
+            squareElement!.innerHTML = '';
+            //Exitting if a piece was removed instead of replaced
+            if (!square.piece) { return undefined; }
+            
+            //Handling squares where a piece was added
+            //Generating the new img element
+            let pieceImg = document.createElement('img');
+            pieceImg.id = square.id + ' Piece';
+            pieceImg.alt = square.colour + ' ' + square.piece
+            pieceImg.src = 'img/' + square.colour + '_' + square.piece + '.png'
+            pieceImg.addEventListener("dragstart", (e: any) => DragPiece(e, square.colour!, square.piece!));
+            if (board.gameState.inProgress) {
+                pieceImg.addEventListener("click", (e) => SelectPiece(e));
+                pieceImg.addEventListener("dragstart", (e) => SelectPiece(e));
+            };
+            
+            //Appending the new img element to the square div
+            squareElement.appendChild(pieceImg);
+            
+            return undefined;
+        });
                 
-                const squareElement = document.getElementById(square.id)!;
-                
-                squareElement!.innerHTML = '';
-                //Exitting if a piece was removed instead of replaced
-                if (!square.piece) { return undefined; }
-                
-                //Handling squares where a piece was added
-                //Generating the new img element
-                let pieceImg = document.createElement('img');
-                pieceImg.id = square.id + ' Piece';
-                pieceImg.alt = square.colour + ' ' + square.piece
-                pieceImg.src = 'img/' + square.colour + '_' + square.piece + '.png'
-                pieceImg.addEventListener("dragstart", (e: any) => DragPiece(e, square.colour!, square.piece!));
-                if (gameState.inProgress) {
-                    pieceImg.addEventListener("click", (e) => SelectPiece(e));
-                    pieceImg.addEventListener("dragstart", (e) => SelectPiece(e));
-                    }
-                    
-                    //Appending the new img element to the square div
-                    squareElement.appendChild(pieceImg);
-                    
-                    return undefined;
-                    })
-                    
-                    //Updating the board in state
-                    setBoard(newBoard);
+        //Updating the board in state
+        setBoard(newBoard);
     };
     
     //Used to promote a piece
@@ -177,10 +144,10 @@ export function Chess() {
 
         //Grabbing the piece to promote
         const newBoard = board.clone();
-        const promotionSquareId = gameState.promotions.white.length > 0 ? gameState.promotions.white[0] : gameState.promotions.black[0];
+        const promotionSquareId = newBoard.gameState.promotions.white.length > 0 ? newBoard.gameState.promotions.white[0] : newBoard.gameState.promotions.black[0];
 
         //Promoting the piece
-        newBoard.promotePiece(newPiece, promotionSquareId, gameState.promotions.white.length + gameState.promotions.black.length <= 1);
+        newBoard.promotePiece(newPiece, promotionSquareId, newBoard.gameState.promotions.white.length + newBoard.gameState.promotions.black.length <= 1);
 
         //Updating state
         setBoardAndHtml(newBoard);
@@ -188,7 +155,7 @@ export function Chess() {
 
     //Returning a boolean to specify if the interactivity should be disabled
     const DisableInteractivity = (): boolean => {
-        return gameStateRef.current.promotions.black.length > 0 || gameStateRef.current.promotions.white.length > 0 || boardRef.current!.outcome.stalemate || Boolean(boardRef.current!.outcome.checkmate);
+        return board.gameState.promotions.black.length > 0 || board.gameState.promotions.white.length > 0 || boardRef.current!.outcome.stalemate || Boolean(boardRef.current!.outcome.checkmate);
     };
 
     //Event Handlers
@@ -236,7 +203,7 @@ export function Chess() {
 
         //Moving the piece if a game is in progress, duplicating the piece if not
         const newBoard = board.clone();
-        if(gameState.inProgress) {
+        if(newBoard.gameState.inProgress) {
             //Returning if trying to grab the other player's piece
             if (colour !== newBoard.gameState.currentPlayer) { return; }
 
@@ -245,8 +212,6 @@ export function Chess() {
             const move = targeting.find(targettingSquares => targettingSquares.target === targetSquare!.id && targettingSquares.moveable);
             if (!move) { return; }
 
-            //Checking if there is a piece in the target square, and appending/updating captured squares if there is
-
             const response = newBoard.requestMove(sourceSquare, targetSquare);
 
             if (response.succeeded && response.action) {
@@ -254,22 +219,24 @@ export function Chess() {
                 moveAudio.play();
             };
             
-            //Updating the state / HTML
-            setBoardAndHtml(newBoard);    
             RemoveHighlights();
+
         } else {
             //Adding the piece
-            newBoard.addPiece([{squareId: targetSquare.id, pieceId: piece, colour: colour}], gameState.inProgress);
-            setBoardAndHtml(newBoard);
+            newBoard.addPiece([{squareId: targetSquare.id, pieceId: piece, colour: colour}], board.gameState.inProgress);
             const addAudio = new Audio('audio/move-self.mp3');
             addAudio.play();
         };
+        
+        //Updating the state / HTML
+        setBoardAndHtml(newBoard);    
+
     };
 
     const BinPiece = (e: DragEvent | React.DragEvent) => {
 
         //Returning out of the function if a game is in progress
-        if (gameState.inProgress) { return; }
+        if (board.gameState.inProgress) { return; }
         
         //Grabbing the parent of the dragged element
         const parentElement = document.getElementById(e.dataTransfer!.getData("squareId"));
@@ -308,12 +275,6 @@ export function Chess() {
         };
 
         setBoard(newBoard);
-
-        //Updating state
-        setGameState(prevState => ({
-            ...prevState,
-            inProgress: true
-        }));
     };
 
     const SelectPiece = (e: Event) => {
@@ -330,7 +291,7 @@ export function Chess() {
         if (!squareObj) { return; }
 
         //Returning if trying to grab the other player's piece
-        if (squareObj.colour !== gameStateRef.current.currentPlayer) { ;return }
+        if (squareObj.colour !== boardRef.current!.gameState.currentPlayer) { return; }
 
         // //Adding a highlight to all possible moves
         piece.parentElement.classList.add("highlight-select");
@@ -361,10 +322,10 @@ export function Chess() {
 
     return (
         <div className='chess-main-container' onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
-            {gameState.inProgress && <CapturedPieces position='left' capturedPieces={gameState.capturedPieces}/>}
+            {board.gameState.inProgress && <CapturedPieces position='left' capturedPieces={board.gameState.capturedPieces}/>}
             {(board.outcome.checkmate || board.outcome.stalemate) && <GameOver outcome={board.outcome}/>}
-            {(!gameState.inProgress && !(board.outcome.checkmate || board.outcome.stalemate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} />}
-            {(gameState.promotions.white.length > 0 || gameState.promotions.black.length > 0) && gameState.inProgress && <Promotion PromotePiece={PromotePiece} colour={gameState.promotions.white.length > 0 ? 'white' : 'black'}/>}
+            {(!board.gameState.inProgress && !(board.outcome.checkmate || board.outcome.stalemate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} />}
+            {(board.gameState.promotions.white.length > 0 || board.gameState.promotions.black.length > 0) && board.gameState.inProgress && <Promotion PromotePiece={PromotePiece} colour={board.gameState.promotions.white.length > 0 ? 'white' : 'black'}/>}
             <div className="chess-container">
                 <div className="y-labels">
                     {[...Array(8)].map((item, index) => 
@@ -384,7 +345,7 @@ export function Chess() {
                     )}
                 </div>
             </div>
-            {gameState.inProgress && <CapturedPieces position='right' capturedPieces={gameState.capturedPieces}/>}
+            {board.gameState.inProgress && <CapturedPieces position='right' capturedPieces={board.gameState.capturedPieces}/>}
         </div>
     )
 }
