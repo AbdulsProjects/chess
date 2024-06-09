@@ -132,7 +132,7 @@ export class Board {
     
     //Cloning the object so state isn't mutated
     clone(): Board {
-        return new Board(this._squares, this.outcome);
+        return new Board(this._squares, this._outcome, this._gameState);
     };
 
     //Starting the game
@@ -258,10 +258,12 @@ export class Board {
                     this._gameState.capturedPieces[currentPlayer].find(piece => piece.piece === targetSquare.piece!)!.number += 1;
                 };
             
-            response = {
-                action: 'capture',
-                succeeded: true
-            };
+                response = {
+                    action: 'capture',
+                    succeeded: true
+                };
+
+                this.movePiece(sourceSquare.id, targetSquare.id);
 
             //Castling
             } else if (move.castling) {
@@ -405,28 +407,21 @@ export class Board {
     };
 
     //Returning all squares that are due a promotion
-    checkForPromotions(): {black: string[], white: string[]} {
-
-        const promotions: {black: string[], white: string[]} = {
-            black: [],
-            white: []
-        }
+    checkForPromotions() {
 
         //Checking the black promotion squares
         for (let i = 1; i <= 8; i++) {
             const square = this._squares.find(square => square.x === i && square.y === 1 && square.piece && square.colour === 'black');
             if (!square || !definedPieces.find(piece => piece.id === square!.piece)!.canPromote) { continue; }
-            promotions.black.push(square.id);
+            this.gameState.promotions.black.push(square.id);
         };
 
         //Checking the white promotion squares
         for (let i = 1; i <= 8; i++) {
             const square = this._squares.find(square => square.x === i && square.y === 8 && square.piece && square.colour === 'white');
             if (!square || !definedPieces.find(piece => piece.id === square!.piece)!.canPromote) { continue; }
-            promotions.white.push(square.id);
+            this.gameState.promotions.white.push(square.id);
         };
-
-        return promotions;
     };
 
     //Promoting a piece
