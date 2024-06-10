@@ -38,10 +38,6 @@
     position: relative;
 }
 
-.suggestion-button-margin-left {
-    margin-left: 10px;
-}
-
-.suggestion-button-margin-right {
-    margin-right: 10px;
+.suggestion-button-middle {
+    margin: 0 10px;
 }
