@@ -6,11 +6,12 @@ import { GameOver } from "./game-over"
 import { PreGame } from "./pre-game"
 import { CapturedPieces } from "./captured-pieces"
 import { Board, Square, TargetingSquare } from "../board"
+import { SentSuggestion } from "./suggestion-mode/sent-suggestion"
+import { RecievedSuggestion } from "./suggestion-mode/recieved-suggestion"
 
 //THINGS TO DO
-//Split the drop handler for on / off board
+//Split the drop handler for on / off board and allow the removal of pieces using a double click
 //Make a click handler work for placing pieces too
-//Add a bin div element that can be used to remove pieces (add a double-click handler that does the same)
 
 //Try to remove the useRef hook. If I remove it at the moment, the select piece fails as it refences the old board. I think this is because the handler
 //is connected as part of setBoardAndHTML, meaning the old board is passed to the function. Putting the SetState before the handlers are connected doesn't
@@ -98,6 +99,11 @@ export function Chess() {
     }, [board]);
 
     //General Functions
+
+    //This is used to preview a suggested board
+    const PreviewBoard = (board: Board) => {
+        setBoard(board);
+    };
     
     //This is used to update the HTML whenever the board in state is updated
     const setBoardAndHtml = (newBoard: Board) => {
@@ -324,6 +330,8 @@ export function Chess() {
             {board.gameState.inProgress && <CapturedPieces position='left' capturedPieces={board.gameState.capturedPieces}/>}
             {(board.outcome.checkmate || board.outcome.stalemate) && <GameOver outcome={board.outcome}/>}
             {(!board.gameState.inProgress && !(board.outcome.checkmate || board.outcome.stalemate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} />}
+            {!board.gameState.inProgress && <SentSuggestion />}
+            {!board.gameState.inProgress && <RecievedSuggestion PreviewBoard={PreviewBoard}/>}
             {(board.gameState.promotions.white.length > 0 || board.gameState.promotions.black.length > 0) && board.gameState.inProgress && <Promotion PromotePiece={PromotePiece} colour={board.gameState.promotions.white.length > 0 ? 'white' : 'black'}/>}
             <div className="chess-container">
                 <div className="y-labels">
@@ -340,8 +348,7 @@ export function Chess() {
                     {board.squares.map((square) => {
                         const altRow = (square.id.charCodeAt(0) + Number(square.id[1])) % 2;
                         return <div key={square.id} id={square.id} className={`square ${altRow ? 'light-square': 'dark-square'}`} onDrop={(e) => DropPiece(e)} onDragOver={HoverPiece} onDragStart={DivPreventDefault}></div>
-                    }
-                    )}
+                    })}
                 </div>
             </div>
             {board.gameState.inProgress && <CapturedPieces position='right' capturedPieces={board.gameState.capturedPieces}/>}

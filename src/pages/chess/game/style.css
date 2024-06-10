@@ -14,6 +14,28 @@
     width: 600px;
 }
 
+.chess-side-container {
+    background-color: var(--light-square);
+    border: 5px solid var(--dark-brown);
+    height: 600px;
+    width: 50%;
+    grid-row: 2 / 3;
+    align-self: center;
+    /* This margin is the height of the x labels on the chess board */
+    margin-bottom: 75px;
+    white-space: nowrap;
+    overflow: auto;
+}
+
+.chess-side-container-left {
+    justify-self: right;
+}
+
+.chess-side-container-right {
+    justify-self: left;
+    margin-left: 65px;
+}
+
 .chess-container {
     display: grid;
     grid-template-columns: 75px 600px;

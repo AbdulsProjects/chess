@@ -1,0 +1,47 @@
+.suggestion-main-container {
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border: none;
+}
+
+.suggestion-header {
+    height: 30px;
+    width: 450px;
+    font-family: 'Courier New', Courier, monospace;
+    color: rgba(117, 29, 29, 0.904);
+    background-color: var(--light-square);
+    border: 5px solid var(--dark-brown);
+    border-bottom: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.suggestion-header > p {
+    padding: 0;
+    margin: 0;
+}
+
+.suggestion-buttons {
+    display: flex;
+    width: 450px;
+    padding-top: 10px;
+    justify-content: space-between;
+}
+
+.suggestion-buttons > button {
+    flex: 1;
+    position: relative;
+}
+
+.suggestion-button-margin-left {
+    margin-left: 10px;
+}
+
+.suggestion-button-margin-right {
+    margin-right: 10px;
+}
