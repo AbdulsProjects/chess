@@ -13,8 +13,8 @@ export const CreateLobby = (props: Props) => {
     const { onlineState }  = useContext(WsContext) as IWsContext;
 
     useEffect(() => {
-        //Checking the sandbox radio button by default
-        (document.getElementById('sandbox') as HTMLInputElement).checked = true;
+        //Checking the suggestion radio button by default
+        (document.getElementById('suggestion') as HTMLInputElement).checked = true;
     }, [])
 
     //Displaying the board once the lobby is created
@@ -65,9 +65,9 @@ export const CreateLobby = (props: Props) => {
             </div>
             <label htmlFor=''>Game type</label>
             <div className="lobby-ui-radio-container">
-                <input type='radio' id='sandbox' name='game_type' value='sandbox' disabled/>
+                <input type='radio' id='sandbox' name='game_type' value='sandbox' checked={true}/>
                 <label htmlFor='sandbox' title='Either player can place any piece anywhere'>Sandbox</label>
-                <input type='radio' id='suggestion' name='game_type' value='suggestion' checked={true}/>
+                <input type='radio' id='suggestion' name='game_type' value='suggestion' disabled/>
                 <label htmlFor='suggestion' title='One player decides where all pieces will start'>Suggestion</label>
                 <input type='radio' id='restricted' name='game_type' value='restricted' disabled/>
                 <label htmlFor='restricted' title='Sandbox but only allow pieces to start on the first 2 rows for each player'>Restricted</label>

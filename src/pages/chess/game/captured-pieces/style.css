@@ -1,25 +1,3 @@
-.captured-pieces-main-container {
-    background-color: var(--light-square);
-    border: 5px solid var(--dark-brown);
-    height: 600px;
-    width: 50%;
-    grid-row: 2 / 3;
-    align-self: center;
-    /* This margin is the height of the x labels on the chess board */
-    margin-bottom: 75px;
-    white-space: nowrap;
-    overflow: auto;
-}
-
-.captured-pieces-main-container-left {
-    justify-self: right;
-}
-
-.captured-pieces-main-container-right {
-    justify-self: left;
-    margin-left: 65px;
-}
-
 .captured-pieces-header {
     background-color: var(--dark-square);
     padding: 5px 0 2px 5px;

@@ -18,7 +18,7 @@ export const CapturedPieces = (props: Props) => {
     const capturedPieces = [...props.capturedPieces[colour]].sort((a, b) => b.points - a.points);
     
     return (
-        <div className={'captured-pieces-main-container captured-pieces-main-container-' + props.position }>
+        <div className={'chess-side-container chess-side-container-' + props.position }>
             <div className='captured-pieces-header'>
                 <h3>{props.position === 'left' ? 'White\'s' : 'Black\'s'} captured pieces</h3>
             </div>
