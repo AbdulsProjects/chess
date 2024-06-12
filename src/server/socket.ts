@@ -32,6 +32,12 @@ const wsServer = new server({
     'httpServer': httpServer
 })
 
+const sendToMultipleClients = (clientIds: string[], payload: any) => {
+    for (let i = 0; i < clientIds.length; i++) {
+        clients[clientIds[i]].connection.send(JSON.stringify(payload));
+    };
+};
+
 wsServer.on('request', request => {
     const connection = request.accept(null, request.origin);
 
@@ -156,6 +162,39 @@ wsServer.on('request', request => {
                     };
 
                     clients[clientId].connection.send(JSON.stringify(payLoad));
+                    break;
+                }
+
+                //Suggesting a board to the other player
+                case 'suggest-board': {
+
+                    const lobby = lobbies[result.lobbyId]!;
+
+                    if (!lobby.blackPlayer || !lobby.whitePlayer) {
+                        
+                        const payload = {
+                            method: 'suggest-board',
+                            squares: result.squares,
+                            suggestingPlayer: result.clientId,
+                            status: 'failed',
+                            message: 'No second player'
+                        };
+                        
+                        clients[result.clientId].connection.send(JSON.stringify(payLoad));
+
+                        return;
+                    };
+
+                    const payload = {
+                        method: 'suggest-board',
+                        squares: result.squares,
+                        suggestingPlayer: result.clientId,
+                        status: 'succeeded',
+                        message: null
+                    };
+
+                    sendToMultipleClients([lobby.blackPlayer, lobby.whitePlayer], payload);
+
                     break;
                 }
             }

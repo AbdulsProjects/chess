@@ -81,12 +81,6 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
                     }
                     break;
                 }
-
-                //Returning the list of lobbies
-                case 'return-lobbies': {
-                    console.log(response);
-                    break;
-                }
             };
         }
 

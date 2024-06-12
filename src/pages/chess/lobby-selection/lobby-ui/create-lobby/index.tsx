@@ -1,12 +1,11 @@
 import { IWsContext, WsContext } from '../../../../../contexts/wsContext'
 import './style.css'
-
 import React, { Dispatch, SetStateAction, useContext, useEffect } from 'react'
 
 interface Props {
     setShowLobbyUi: Dispatch<SetStateAction<boolean>>,
     setShowBoard: Dispatch<SetStateAction<boolean>>
-}
+};
 
 export const CreateLobby = (props: Props) => {
     
@@ -15,7 +14,7 @@ export const CreateLobby = (props: Props) => {
     useEffect(() => {
         //Checking the suggestion radio button by default
         (document.getElementById('suggestion') as HTMLInputElement).checked = true;
-    }, [])
+    }, []);
 
     //Displaying the board once the lobby is created
     useEffect(() => {
@@ -23,7 +22,7 @@ export const CreateLobby = (props: Props) => {
             props.setShowBoard(true);
             props.setShowLobbyUi(false);
         }
-    }, [onlineState])
+    }, [onlineState]);
 
     const CreateLobby = (lobbyName: string, lobbyPassword: string | null, gameType: 'sandbox' | 'suggestion' | 'restricted') => {
         
@@ -33,10 +32,10 @@ export const CreateLobby = (props: Props) => {
             lobbyName: lobbyName,
             lobbyPassword: lobbyPassword === '' ? null : lobbyPassword,
             gameType: gameType
-        }
+        };
 
         onlineState.wsConn!.send(JSON.stringify(payLoad));
-    }
+    };
 
     const CreateLobbyButton = () => {
         
@@ -50,7 +49,7 @@ export const CreateLobby = (props: Props) => {
         const lobbyMode: HTMLInputElement = (document.querySelector('input[name="game_type"]:checked')! as HTMLInputElement);
         
         CreateLobby(lobbyName.value, lobbyPassword.value, (lobbyMode.value as 'sandbox' | 'suggestion' | 'restricted'));
-    }
+    };
     
     return (
         <div className='create-lobby-container'>
@@ -65,9 +64,9 @@ export const CreateLobby = (props: Props) => {
             </div>
             <label htmlFor=''>Game type</label>
             <div className="lobby-ui-radio-container">
-                <input type='radio' id='sandbox' name='game_type' value='sandbox' checked={true}/>
+                <input type='radio' id='sandbox' name='game_type' value='sandbox' disabled/>
                 <label htmlFor='sandbox' title='Either player can place any piece anywhere'>Sandbox</label>
-                <input type='radio' id='suggestion' name='game_type' value='suggestion' disabled/>
+                <input type='radio' id='suggestion' name='game_type' value='suggestion' checked={true}/>
                 <label htmlFor='suggestion' title='One player decides where all pieces will start'>Suggestion</label>
                 <input type='radio' id='restricted' name='game_type' value='restricted' disabled/>
                 <label htmlFor='restricted' title='Sandbox but only allow pieces to start on the first 2 rows for each player'>Restricted</label>
