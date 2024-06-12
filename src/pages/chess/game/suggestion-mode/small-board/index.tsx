@@ -15,7 +15,7 @@ export const SmallBoard = (props: Props) => {
                 const altRow = (square.id.charCodeAt(0) + Number(square.id[1])) % 2;
                 return (
                     <div key={square.id} id={'suggestion-' + square.id} className={`square ${altRow ? 'light-square': 'dark-square'}`} >
-                        <img className='small-piece' src={'img/' + square.colour + '_' + square.piece + '.png'} alt={square.colour + ' ' + square.piece} />
+                        {square.piece && <img className='small-piece' src={'img/' + square.colour + '_' + square.piece + '.png'} alt={square.colour + ' ' + square.piece} />}
                     </div>
                 )
             })}

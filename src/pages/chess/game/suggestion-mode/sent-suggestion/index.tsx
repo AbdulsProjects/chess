@@ -12,7 +12,7 @@ interface Props {
 
 export const SentSuggestion = (props: Props) => {
 
-    const { onlineState }  = useContext(WsContext) as IWsContext;
+    const { onlineState, createCallback }  = useContext(WsContext) as IWsContext;
 
     const [suggestedBoard, setSuggestedBoard] = useState<Square[]>([]);
 
@@ -41,8 +41,12 @@ export const SentSuggestion = (props: Props) => {
 
 
     const SuggestBoard = () => {
-        
-        setSuggestedBoard(props.boardToSuggest);
+
+        //Returning if attempting to suggest a board without 2 kings
+        if (props.boardToSuggest.filter(square => square.piece === 'king' && square.colour === 'white').length !== 1 || props.boardToSuggest.filter(square => square.piece === 'king' && square.colour === 'black').length !== 1) {
+            alert('Each player must have exactly 1 king to start a game');
+            return;
+        };
 
         const payLoad = {
             method: 'suggest-board',
@@ -50,6 +54,11 @@ export const SentSuggestion = (props: Props) => {
             lobbyId: onlineState.lobbyId,
             squares: props.boardToSuggest
         };
+
+        //Creating the callback function to save the lobbies to state
+        createCallback('suggest-board', (response) => {
+            setSuggestedBoard(response.squares);
+        });
 
         onlineState.wsConn!.send(JSON.stringify(payLoad));
     };

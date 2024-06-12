@@ -25,13 +25,13 @@ export const BrowseLobbies = (props: Props) => {
         //Creating the callback function to save the lobbies to state
         createCallback('return-lobbies', (response) => {
             setLobbies(response.lobbies);
-        })
+        });
 
         //Sending the request to return the lobbies
         const payLoad = {
             method: 'return-lobbies',
             clientId: onlineState.clientId,
-        }
+        };
 
         onlineState.wsConn!.send(JSON.stringify(payLoad));
     }, [])
