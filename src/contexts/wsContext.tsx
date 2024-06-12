@@ -42,7 +42,7 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
             //Executing the callback function if one is specified for the current method, allowing easier access to the response from consuming components
             if (callbacks.current[response.method]) {
                 callbacks.current[response.method](response);
-            }
+            };
 
             switch(response.method) {
                 //Connecting to the server

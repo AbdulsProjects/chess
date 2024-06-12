@@ -1,12 +1,13 @@
 import http from 'http';
 import { connection, server } from 'websocket';
 import crypto from 'crypto';
-import { Board } from '../pages/chess/board';
+import { Board, Square } from '../pages/chess/board';
 
 interface Clients {
     [clientId: string]: {
         connection: connection,
-        lobbyId: string | null
+        lobbyId: string | null,
+        colour: 'black' | 'white' | null
     }
 }
 
@@ -16,9 +17,13 @@ export interface Lobbies {
         lobbyName: string,
         lobbyPassword: string | null,
         gameType: string,
-        whitePlayer: string | null,
-        blackPlayer: string | null,
+        white: string | null,
+        black: string | null,
         board: Board | null
+        suggestedSquares: {
+            white: Square[],
+            black: Square[]
+        }
     }
 }
 
@@ -57,14 +62,14 @@ wsServer.on('request', request => {
                     //Doesn't create a new game if a game with that name already exists
                     for (const lobbyId in lobbies) {
                         if (lobbies[lobbyId].lobbyName === result.lobbyName) {
-                            const payLoad = {
+                            const payload = {
                                 method: 'create',
                                 lobby: null,
                                 status: 'failed',
                                 message: 'A lobby with this name already exists'
                             };
 
-                            clients[clientId].connection.send(JSON.stringify(payLoad));
+                            clients[clientId].connection.send(JSON.stringify(payload));
                             return;
                         }
                     };
@@ -76,21 +81,25 @@ wsServer.on('request', request => {
                         lobbyName: result.lobbyName,
                         lobbyPassword: result.lobbyPassword,
                         gameType: result.gameType,
-                        whitePlayer: clientId,
-                        blackPlayer: null,
-                        board: null
+                        white: clientId,
+                        black: null,
+                        board: null,
+                        suggestedSquares: {
+                            white: [],
+                            black: []
+                        }
                     };
 
                     clients[clientId].lobbyId = lobbyId;
 
-                    const payLoad = {
+                    const payload = {
                         method: 'create',
                         lobby: lobbies[lobbyId],
                         status: 'succeeded',
                         message: null
                     };
 
-                    clients[clientId].connection.send(JSON.stringify(payLoad));
+                    clients[clientId].connection.send(JSON.stringify(payload));
                     break;
                 }
 
@@ -101,48 +110,50 @@ wsServer.on('request', request => {
 
                     //Lobby password doesn't match the passed password
                     if (lobbies[lobbyId].lobbyPassword !== result.lobbyPassword) {
-                        const payLoad = {
+                        const payload = {
                             method: 'join',
                             game: null,
                             status: 'failed',
                             message: 'Incorrect password'
                         };
     
-                        clients[clientId].connection.send(JSON.stringify(payLoad));
+                        clients[clientId].connection.send(JSON.stringify(payload));
                         return;
                     }
 
                     //Lobby is already full
-                    if (lobbies[lobbyId].blackPlayer && lobbies[lobbyId].whitePlayer) {
-                        const payLoad = {
+                    if (lobbies[lobbyId].black && lobbies[lobbyId].white) {
+                        const payload = {
                             method: 'join',
                             game: null,
                             status: 'failed',
                             message: 'This lobby is full'
                         };
 
-                        clients[clientId].connection.send(JSON.stringify(payLoad));
+                        clients[clientId].connection.send(JSON.stringify(payload));
                         return;
                     }
 
                     //Updating the client and game to show that the client has joined
                     clients[clientId].lobbyId = lobbyId;
 
-                    if (lobbies[lobbyId].whitePlayer !== null) {
-                        lobbies[lobbyId].blackPlayer = clientId;
-                    } else {
-                        lobbies[lobbyId].whitePlayer = clientId;
+                    if (lobbies[lobbyId].white !== null) {
+                        lobbies[lobbyId].black = clientId;
+                        clients[clientId].colour = 'black';
+                        } else {
+                        lobbies[lobbyId].white = clientId;
+                        clients[clientId].colour = 'white';
                     }
 
                     //Sending the payload to the client
-                    const payLoad = {
+                    const payload = {
                         method: 'join',
                         lobby: lobbies[lobbyId],
                         status: 'succeeded',
                         message: null
                     };
 
-                    clients[clientId].connection.send(JSON.stringify(payLoad));
+                    clients[clientId].connection.send(JSON.stringify(payload));
                     break;
                 }
 
@@ -156,12 +167,12 @@ wsServer.on('request', request => {
                     }
 
                     //Sending the payload to the client
-                    const payLoad = {
+                    const payload = {
                         method: 'return-lobbies',
                         lobbies: obfuscatedLobbies,
                     };
 
-                    clients[clientId].connection.send(JSON.stringify(payLoad));
+                    clients[clientId].connection.send(JSON.stringify(payload));
                     break;
                 }
 
@@ -169,21 +180,8 @@ wsServer.on('request', request => {
                 case 'suggest-board': {
 
                     const lobby = lobbies[result.lobbyId]!;
-
-                    if (!lobby.blackPlayer || !lobby.whitePlayer) {
-                        
-                        const payload = {
-                            method: 'suggest-board',
-                            squares: result.squares,
-                            suggestingPlayer: result.clientId,
-                            status: 'failed',
-                            message: 'No second player'
-                        };
-                        
-                        clients[result.clientId].connection.send(JSON.stringify(payLoad));
-
-                        return;
-                    };
+                    const client = clients[clientId];
+                    lobby.suggestedSquares[client.colour as 'white' | 'black'] = result.squares;
 
                     const payload = {
                         method: 'suggest-board',
@@ -193,7 +191,11 @@ wsServer.on('request', request => {
                         message: null
                     };
 
-                    sendToMultipleClients([lobby.blackPlayer, lobby.whitePlayer], payload);
+                    if (lobby.black && lobby.white) {
+                        sendToMultipleClients([lobby.black, lobby.white], payload);
+                    } else {
+                        clients[clientId].connection.send(JSON.stringify(payload));
+                    };
 
                     break;
                 }
@@ -206,14 +208,15 @@ wsServer.on('request', request => {
     const clientId: string = crypto.randomUUID();
     clients[clientId] = {
         connection: connection,
-        lobbyId: null
+        lobbyId: null,
+        colour: null
     };
 
-    const payLoad = {
+    const connectPayload = {
         method: 'connect',
         clientId: clientId
     };
 
-    connection.send(JSON.stringify(payLoad));
+    connection.send(JSON.stringify(connectPayload));
 
 })
