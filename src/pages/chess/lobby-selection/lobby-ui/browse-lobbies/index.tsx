@@ -38,7 +38,7 @@ export const BrowseLobbies = (props: Props) => {
 
     //Displaying the board once a lobby has been joined
     useEffect(() => {
-        if (onlineState.lobbyId) {
+        if (onlineState.lobby?.lobbyId) {
             props.setShowBoard(true);
             props.setShowLobbyUi(false);
         }

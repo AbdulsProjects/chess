@@ -11,20 +11,22 @@ interface Clients {
     }
 }
 
-export interface Lobbies {
-    [lobbyId: string]: {
-        lobbyId: string,
-        lobbyName: string,
-        lobbyPassword: string | null,
-        gameType: string,
-        white: string | null,
-        black: string | null,
-        board: Board | null
-        suggestedSquares: {
-            white: Square[],
-            black: Square[]
-        }
+export interface Lobby {
+    lobbyId: string,
+    lobbyName: string,
+    lobbyPassword: string | null,
+    gameType: string,
+    white: string | null,
+    black: string | null,
+    board: Board | null
+    suggestedSquares: {
+        white: Square[],
+        black: Square[]
     }
+}
+
+export interface Lobbies {
+    [lobbyId: string]: Lobby
 }
 
 const clients: Clients = {};
@@ -75,8 +77,7 @@ wsServer.on('request', request => {
                     };
 
                     const lobbyId: string = crypto.randomUUID();
-
-                    lobbies[lobbyId] = {
+                    const newLobby = {
                         lobbyId: lobbyId,
                         lobbyName: result.lobbyName,
                         lobbyPassword: result.lobbyPassword,
@@ -90,11 +91,13 @@ wsServer.on('request', request => {
                         }
                     };
 
+                    lobbies[lobbyId] = newLobby;
+
                     clients[clientId].lobbyId = lobbyId;
 
                     const payload = {
                         method: 'create',
-                        lobby: lobbies[lobbyId],
+                        lobby: newLobby,
                         status: 'succeeded',
                         message: null
                     };
@@ -148,7 +151,10 @@ wsServer.on('request', request => {
                     //Sending the payload to the client
                     const payload = {
                         method: 'join',
-                        lobby: lobbies[lobbyId],
+                        lobby: {
+                            ...lobbies[lobbyId],
+                            [lobbies[lobbyId].white === clientId ? 'black' : 'white'] : 'true'
+                        },
                         status: 'succeeded',
                         message: null
                     };
@@ -157,13 +163,15 @@ wsServer.on('request', request => {
                     break;
                 }
 
-                //Returning all lobbies with obfuscated passwords
+                //Returning all lobbies with obfuscated passwords and clientIds
                 case 'return-lobbies': {
                     
                     const obfuscatedLobbies: Lobbies = structuredClone(lobbies);
 
                     for (var key of Object.keys(obfuscatedLobbies)) {
-                        obfuscatedLobbies[key].lobbyPassword = obfuscatedLobbies[key].lobbyPassword === null ? null : 'true'
+                        obfuscatedLobbies[key].lobbyPassword = obfuscatedLobbies[key].lobbyPassword === null ? null : 'true';
+                        obfuscatedLobbies[key].white = obfuscatedLobbies[key].white === null ? null : 'true';
+                        obfuscatedLobbies[key].black = obfuscatedLobbies[key].black === null ? null : 'true';
                     }
 
                     //Sending the payload to the client
@@ -178,6 +186,21 @@ wsServer.on('request', request => {
 
                 //Suggesting a board to the other player
                 case 'suggest-board': {
+
+                    const squares = result.squares;
+
+                    if (squares.filter((square: Square) => square.piece === 'king' && square.colour === 'white').length !== 1 || squares.filter((square: Square) => square.piece === 'king' && square.colour === 'black').length !== 1) {
+                        
+                        const payload = {
+                            method: 'suggest-board',
+                            status: 'failed',
+                            message: 'Each player must have exactly 1 king to start a game'
+                        };
+
+                        clients[clientId].connection.send(JSON.stringify(payload));
+                        return;
+
+                    };
 
                     const lobby = lobbies[result.lobbyId]!;
                     const client = clients[clientId];

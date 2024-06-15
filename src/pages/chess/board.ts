@@ -143,7 +143,7 @@ export class Board {
         //Exitting early if there isn't a king of both colours / there are multiple kings of the same colour
         const whiteKings = this.squares.filter(square => square.piece === 'king' && square.colour === 'white');
         const blackKings = this.squares.filter(square => square.piece === 'king' && square.colour === 'black');
-        if (blackKings.length + whiteKings.length !== 2 || !blackKings.length || !whiteKings.length) {
+        if (blackKings.length !== 1 || whiteKings.length !== 1) {
             return {
                 message: 'Each player must have exactly 1 king to start a game',
                 succeeded: false
