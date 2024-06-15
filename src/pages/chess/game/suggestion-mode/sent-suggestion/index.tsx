@@ -51,12 +51,18 @@ export const SentSuggestion = (props: Props) => {
         const payLoad = {
             method: 'suggest-board',
             clientId: onlineState.clientId,
-            lobbyId: onlineState.lobbyId,
+            lobbyId: onlineState.lobby!.lobbyId,
             squares: props.boardToSuggest
         };
 
         //Creating the callback function to save the lobbies to state
         createCallback('suggest-board', (response) => {
+            
+            if (response.status === 'failed') {
+                alert(response.message);
+                return;
+            };
+
             setSuggestedBoard(response.squares);
         });
 

@@ -1,9 +1,10 @@
 import { Dispatch, SetStateAction, createContext, useRef, useState } from 'react';
+import { Lobby } from '../server/socket';
 
 export interface OnlineState {
     wsConn: WebSocket | null,
     clientId: string | undefined,
-    lobbyId: string | undefined
+    lobby: Lobby | undefined
 }
 
 export interface IWsContext {
@@ -20,7 +21,7 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
     const [onlineState, setOnlineState] = useState<OnlineState>({
         wsConn: null,
         clientId: undefined,
-        lobbyId: undefined
+        lobby: undefined
     });
     
     //Creating a hash map of callback functions to allow the response to be easily accessed within consuming components
@@ -64,7 +65,7 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
 
                     setOnlineState(prevState => ({
                         ...prevState,
-                        lobbyId: response.lobby.lobbyId
+                        lobby: response.lobby
                     }));
                     break;
                 }
@@ -74,7 +75,7 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
                     if (response.status === 'succeeded') {
                         setOnlineState(prevState => ({
                             ...prevState,
-                            lobbyId: response.lobby.lobbyId
+                            lobby: response.lobby
                         }));
                     } else {
                         alert(response.message);

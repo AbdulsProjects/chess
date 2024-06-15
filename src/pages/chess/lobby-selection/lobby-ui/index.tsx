@@ -2,7 +2,7 @@ import { IWsContext, WsContext } from '../../../../contexts/wsContext';
 import { BrowseLobbies } from './browse-lobbies';
 import { CreateLobby } from './create-lobby'
 import './style.css'
-import React, { Dispatch, SetStateAction, useContext, useState } from 'react'
+import React, { Dispatch, SetStateAction, useState } from 'react'
 
 interface Props {
     setShowLobbyUi: Dispatch<SetStateAction<boolean>>,

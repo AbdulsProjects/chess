@@ -18,7 +18,7 @@ export const CreateLobby = (props: Props) => {
 
     //Displaying the board once the lobby is created
     useEffect(() => {
-        if (onlineState.lobbyId) {
+        if (onlineState.lobby?.lobbyId) {
             props.setShowBoard(true);
             props.setShowLobbyUi(false);
         }
