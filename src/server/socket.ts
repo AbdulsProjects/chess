@@ -45,6 +45,16 @@ const sendToMultipleClients = (clientIds: string[], payload: any) => {
     };
 };
 
+const obfuscateLobby = (lobby: Lobby): Lobby => {
+    const obfuscatedLobby = { 
+        ...lobby,
+        lobbyPassword: lobby.lobbyPassword === null ? null : 'true',
+        white: lobby.white === null ? null : 'true',
+        black: lobby.black === null ? null : 'true'
+    };
+    return obfuscatedLobby;
+};
+
 wsServer.on('request', request => {
     const connection = request.accept(null, request.origin);
 
@@ -94,10 +104,11 @@ wsServer.on('request', request => {
                     lobbies[lobbyId] = newLobby;
 
                     clients[clientId].lobbyId = lobbyId;
+                    clients[clientId].colour = 'white';
 
                     const payload = {
                         method: 'create',
-                        lobby: newLobby,
+                        lobby: obfuscateLobby(newLobby),
                         status: 'succeeded',
                         message: null
                     };
@@ -151,10 +162,8 @@ wsServer.on('request', request => {
                     //Sending the payload to the client
                     const payload = {
                         method: 'join',
-                        lobby: {
-                            ...lobbies[lobbyId],
-                            [lobbies[lobbyId].white === clientId ? 'black' : 'white'] : 'true'
-                        },
+                        lobby: obfuscateLobby(lobbies[lobbyId]),
+                        colour: clients[clientId].colour,
                         status: 'succeeded',
                         message: null
                     };
@@ -169,10 +178,8 @@ wsServer.on('request', request => {
                     const obfuscatedLobbies: Lobbies = structuredClone(lobbies);
 
                     for (var key of Object.keys(obfuscatedLobbies)) {
-                        obfuscatedLobbies[key].lobbyPassword = obfuscatedLobbies[key].lobbyPassword === null ? null : 'true';
-                        obfuscatedLobbies[key].white = obfuscatedLobbies[key].white === null ? null : 'true';
-                        obfuscatedLobbies[key].black = obfuscatedLobbies[key].black === null ? null : 'true';
-                    }
+                        obfuscatedLobbies[key] = obfuscateLobby(obfuscatedLobbies[key]);
+                    };
 
                     //Sending the payload to the client
                     const payload = {
@@ -184,6 +191,7 @@ wsServer.on('request', request => {
                     break;
                 }
 
+                //*********************** SUGGESTION GAME TYPE ***********************
                 //Suggesting a board to the other player
                 case 'suggest-board': {
 
@@ -208,7 +216,7 @@ wsServer.on('request', request => {
 
                     const payload = {
                         method: 'suggest-board',
-                        squares: result.squares,
+                        lobby: obfuscateLobby(lobby),
                         suggestingPlayer: result.clientId,
                         status: 'succeeded',
                         message: null
@@ -218,6 +226,58 @@ wsServer.on('request', request => {
                         sendToMultipleClients([lobby.black, lobby.white], payload);
                     } else {
                         clients[clientId].connection.send(JSON.stringify(payload));
+                    };
+
+                    break;
+                }
+
+                //Cancelling a suggestion
+                case 'cancel-suggestion': {
+
+                    const lobby = lobbies[result.lobbyId]!;
+                    const client = clients[clientId];
+
+                    lobby.suggestedSquares[client.colour!] = [];
+
+                    const payload = {
+                        method: 'cancel-suggestion',
+                        lobby: obfuscateLobby(lobby),
+                        status: 'succeeded',
+                        message: null
+                    };
+
+                    if (lobby.black && lobby.white) {
+                        sendToMultipleClients([lobby.black, lobby.white], payload);
+                    } else {
+                        clients[clientId].connection.send(JSON.stringify(payload));
+                    };
+
+                    break;
+                }
+
+                //Declining a suggestion
+                case 'decline-suggestion': {
+                    
+                    const client = clients[clientId];
+                    const lobby = lobbies[result.lobbyId]!;
+                    lobby.suggestedSquares[client.colour === 'white' ? 'black' : 'white'] = [];
+
+                    //Sending the payload to the player who declined
+                    const payload = {
+                        method: 'decline-suggestion',
+                        lobby: obfuscateLobby(lobby),
+                        opponentDeclined: false,
+                        status: 'succeeded',
+                        message: null
+                    };
+
+                    clients[clientId].connection.send(JSON.stringify(payload));
+
+                    //Sending the payload to the player who's suggestion was declined. OpponentDeclined is set for an alert on the front end
+                    if (lobby.black && lobby.white) {
+                        const opponentId = clientId === lobby.black ? lobby.white : lobby.black;
+                        payload.opponentDeclined = true;
+                        clients[opponentId].connection.send(JSON.stringify(payload));
                     };
 
                     break;

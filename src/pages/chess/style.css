@@ -16,3 +16,15 @@
 .chess-button:hover {
     background-color: var(--light-square-hover);
 }
+
+.chess-button:disabled {
+    background-color: #dfd1b0;
+    cursor: pointer;
+    font-family: 'Courier New', Courier, monospace;
+    color: rgba(117, 29, 29, 0.904);
+}
+
+.chess-button:disabled:hover {
+    background-color: #dfd1b0;
+    cursor: not-allowed;
+}
