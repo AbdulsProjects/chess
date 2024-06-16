@@ -4,6 +4,7 @@ import { Lobby } from '../server/socket';
 export interface OnlineState {
     wsConn: WebSocket | null,
     clientId: string | undefined,
+    colour: 'white' | 'black' | undefined,
     lobby: Lobby | undefined
 }
 
@@ -21,6 +22,7 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
     const [onlineState, setOnlineState] = useState<OnlineState>({
         wsConn: null,
         clientId: undefined,
+        colour: undefined,
         lobby: undefined
     });
     
@@ -65,6 +67,7 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
 
                     setOnlineState(prevState => ({
                         ...prevState,
+                        colour: 'white',
                         lobby: response.lobby
                     }));
                     break;
@@ -75,11 +78,48 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
                     if (response.status === 'succeeded') {
                         setOnlineState(prevState => ({
                             ...prevState,
+                            colour: response.colour,
                             lobby: response.lobby
                         }));
                     } else {
                         alert(response.message);
                     }
+                    break;
+                }
+
+                //Suggesting a board in the suggestion game type
+                case 'suggest-board': {
+                    if (response.status === 'succeeded') {
+                        setOnlineState(prevState => ({
+                            ...prevState,
+                            lobby: response.lobby
+                        }));
+                    } else {
+                        alert(response.message);
+                    }
+                    break;
+                }
+
+                //Cancelling your current suggestion
+                case 'cancel-suggestion': {
+                    setOnlineState(prevState => ({
+                        ...prevState,
+                        lobby: response.lobby
+                    }));
+                    break;
+                }
+
+                //Declining a suggestion
+                case 'decline-suggestion': {
+                    setOnlineState(prevState => ({
+                        ...prevState,
+                        lobby: response.lobby
+                    }));
+
+                    if (response.opponentDeclined) {
+                        alert('Your opponent has declined your suggested board')
+                    };
+
                     break;
                 }
             };

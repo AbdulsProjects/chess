@@ -1,8 +1,9 @@
 import './style.css'
 import '../style.css'
-import React from 'react'
 import { SmallBoard } from '../small-board';
-import { Board, Square } from '../../../board';
+import { Square } from '../../../board';
+import { useContext } from 'react';
+import { IWsContext, WsContext } from '../../../../../contexts/wsContext';
 
 interface Props {
     PreviewBoard: (squares: Square[]) => void
@@ -10,23 +11,19 @@ interface Props {
 
 export const RecievedSuggestion = (props: Props) => {
 
-    const testBoard: Square[] = [];
-    for (let i = 8; i > 0; i--) {
-        for (let j = 65; j < 73; j++) {
-            testBoard.push({
-                id: String.fromCharCode(j) + i,
-                piece: 'king',
-                colour: 'white',
-                x: j-64,
-                y: i,
-                firstTurn: false,
-                targeting: [],
-                targetedBy: {
-                    black: [],
-                    white: []
-                }
-            });
+    const { onlineState }  = useContext(WsContext) as IWsContext;
+    const currentSuggestion = onlineState.lobby?.suggestedSquares[onlineState.colour === 'white' ? 'black' : 'white'];
+
+    const DeclineSuggestion = () => {
+        
+        const payLoad = {
+            method: 'decline-suggestion',
+            clientId: onlineState.clientId,
+            lobbyId: onlineState.lobby!.lobbyId
         };
+
+        onlineState.wsConn!.send(JSON.stringify(payLoad));
+
     };
 
     return (
@@ -34,11 +31,11 @@ export const RecievedSuggestion = (props: Props) => {
             <div className='suggestion-header'>
                 <p>Opponent's Suggestion</p>
             </div>
-            <SmallBoard squares={testBoard}/>
+            <SmallBoard squares={currentSuggestion}/>
             <div className='suggestion-buttons'>
-                <button className='chess-button'>Accept</button>
-                <button className='chess-button suggestion-button-middle'>Decline</button>
-                <button className='chess-button' onClick={() => props.PreviewBoard(testBoard)}>Preview</button>
+                <button className='chess-button' disabled={!currentSuggestion || currentSuggestion.length === 0}>Accept</button>
+                <button className='chess-button suggestion-button-middle' onClick={DeclineSuggestion} disabled={!currentSuggestion || currentSuggestion.length === 0}>Decline</button>
+                <button className='chess-button' onClick={() => props.PreviewBoard(currentSuggestion!)} disabled={!currentSuggestion || currentSuggestion.length === 0}>Preview</button>
             </div>
         </div>      
     )

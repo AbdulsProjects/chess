@@ -12,46 +12,10 @@ interface Props {
 
 export const SentSuggestion = (props: Props) => {
 
-    const { onlineState, createCallback }  = useContext(WsContext) as IWsContext;
+    const { onlineState }  = useContext(WsContext) as IWsContext;
+    const currentSuggestion = onlineState.lobby?.suggestedSquares[onlineState.colour!];
 
-    const [suggestedBoard, setSuggestedBoard] = useState<Square[]>([]);
-
-    useEffect(() => {
-        const testBoard: Square[] = [];
-        for (let i = 8; i > 0; i--) {
-            for (let j = 65; j < 73; j++) {
-                testBoard.push({
-                    id: String.fromCharCode(j) + i,
-                    piece: 'king',
-                    colour: 'white',
-                    x: j-64,
-                    y: i,
-                    firstTurn: false,
-                    targeting: [],
-                    targetedBy: {
-                        black: [],
-                        white: []
-                    }
-                });
-            };
-        };
-
-        setSuggestedBoard(testBoard);
-
-        //Creating the callback function to save the lobbies to state
-        createCallback('suggest-board', (response) => {
-            
-            if (response.status === 'failed') {
-                alert(response.message);
-                return;
-            };
-
-            setSuggestedBoard(response.squares);
-        });
-
-    }, []);
-
-
+    //Suggesting the current board
     const SuggestBoard = () => {
 
         //Returning if attempting to suggest a board without 2 kings
@@ -59,6 +23,13 @@ export const SentSuggestion = (props: Props) => {
             alert('Each player must have exactly 1 king to start a game');
             return;
         };
+
+        //Returning if there are no changed squares
+        const differentSquares = props.boardToSuggest.filter((newSquare) => {
+            const correspondingSquare = currentSuggestion!.find(oldSquare => oldSquare.id === newSquare.id);
+            return (newSquare.piece && !correspondingSquare) || newSquare.piece !== correspondingSquare?.piece || newSquare.colour !== correspondingSquare?.colour;
+        });
+        if (differentSquares.length === 0) { return; }
 
         const payLoad = {
             method: 'suggest-board',
@@ -70,16 +41,30 @@ export const SentSuggestion = (props: Props) => {
         onlineState.wsConn!.send(JSON.stringify(payLoad));
     };
 
+    //Cancelling the current suggestion
+    const CancelSuggestion = () => {
+        
+        if (currentSuggestion!.length === 0) { return; }
+
+        const payLoad = {
+            method: 'cancel-suggestion',
+            clientId: onlineState.clientId,
+            lobbyId: onlineState.lobby!.lobbyId
+        };
+
+        onlineState.wsConn!.send(JSON.stringify(payLoad));
+    };
+
     return (
         <div className='chess-side-container chess-side-container-left suggestion-main-container'>
             <div className='suggestion-header'>
                 <p>Your Suggestion</p>
             </div>
-            <SmallBoard squares={suggestedBoard}/>
+            <SmallBoard squares={currentSuggestion}/>
             <div className='suggestion-buttons'>
-                <button className='chess-button'>Cancel</button>
+                <button className='chess-button' onClick={CancelSuggestion} disabled={!currentSuggestion || currentSuggestion.length === 0}>Cancel</button>
                 <button className='chess-button suggestion-button-middle' onClick={SuggestBoard}>Suggest</button>
-                <button className='chess-button' onClick={() => props.PreviewBoard(suggestedBoard)}>Preview</button>
+                <button className='chess-button' onClick={() => props.PreviewBoard(currentSuggestion!)} disabled={!currentSuggestion || currentSuggestion.length === 0}>Preview</button>
             </div>
         </div>      
     )
