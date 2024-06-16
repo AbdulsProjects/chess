@@ -100,8 +100,8 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
                     break;
                 }
 
-                //Cancelling your current suggestion
-                case 'cancel-suggestion': {
+                //Cancelling / accepting your current suggestion
+                case 'set-lobby': {
                     setOnlineState(prevState => ({
                         ...prevState,
                         lobby: response.lobby

@@ -7,7 +7,7 @@ import { IWsContext, WsContext } from '../../../../../contexts/wsContext';
 
 interface Props {
     boardToSuggest: Square[],
-    PreviewBoard: (squares: Square[]) => void
+    SetSquares: (squares: Square[]) => void
 };
 
 export const SentSuggestion = (props: Props) => {
@@ -31,14 +31,14 @@ export const SentSuggestion = (props: Props) => {
         });
         if (differentSquares.length === 0) { return; }
 
-        const payLoad = {
+        const payload = {
             method: 'suggest-board',
             clientId: onlineState.clientId,
             lobbyId: onlineState.lobby!.lobbyId,
             squares: props.boardToSuggest
         };
 
-        onlineState.wsConn!.send(JSON.stringify(payLoad));
+        onlineState.wsConn!.send(JSON.stringify(payload));
     };
 
     //Cancelling the current suggestion
@@ -46,13 +46,13 @@ export const SentSuggestion = (props: Props) => {
         
         if (currentSuggestion!.length === 0) { return; }
 
-        const payLoad = {
+        const payload = {
             method: 'cancel-suggestion',
             clientId: onlineState.clientId,
             lobbyId: onlineState.lobby!.lobbyId
         };
 
-        onlineState.wsConn!.send(JSON.stringify(payLoad));
+        onlineState.wsConn!.send(JSON.stringify(payload));
     };
 
     return (
@@ -64,7 +64,7 @@ export const SentSuggestion = (props: Props) => {
             <div className='suggestion-buttons'>
                 <button className='chess-button' onClick={CancelSuggestion} disabled={!currentSuggestion || currentSuggestion.length === 0}>Cancel</button>
                 <button className='chess-button suggestion-button-middle' onClick={SuggestBoard}>Suggest</button>
-                <button className='chess-button' onClick={() => props.PreviewBoard(currentSuggestion!)} disabled={!currentSuggestion || currentSuggestion.length === 0}>Preview</button>
+                <button className='chess-button' onClick={() => props.SetSquares(currentSuggestion!)} disabled={!currentSuggestion || currentSuggestion.length === 0}>Preview</button>
             </div>
         </div>      
     )

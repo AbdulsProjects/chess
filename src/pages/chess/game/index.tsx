@@ -1,6 +1,6 @@
 import "./style.css"
-import React, { useEffect, useRef, useState } from 'react'
-import definedPieces, { Piece } from "./pieces"
+import React, { useContext, useEffect, useRef, useState } from 'react'
+import { Piece } from "./pieces"
 import { Promotion } from "./promotion"
 import { GameOver } from "./game-over"
 import { PreGame } from "./pre-game"
@@ -8,6 +8,7 @@ import { CapturedPieces } from "./captured-pieces"
 import { Board, Square, TargetingSquare } from "../board"
 import { SentSuggestion } from "./suggestion-mode/sent-suggestion"
 import { RecievedSuggestion } from "./suggestion-mode/recieved-suggestion"
+import { IWsContext, WsContext } from "../../../contexts/wsContext"
 
 //THINGS TO DO
 //Split the drop handler for on / off board and allow the removal of pieces using a double click
@@ -45,14 +46,12 @@ for (let i = 8; i > 0; i--) {
 
 export function Chess() {
 
-    interface UiVisibility {
-        lobby: boolean
-    };
-
     //Storing the board / game state in state
     const [board, setBoard] = useState<Board>(new Board(localBoard));
 
     const boardRef = useRef<Board>();
+
+    const { onlineState }  = useContext(WsContext) as IWsContext;
 
     boardRef.current = board;
 
@@ -101,9 +100,13 @@ export function Chess() {
     //General Functions
 
     //This is used to preview a suggested board
-    const PreviewBoard = (squares: Square[]) => {
+    const SetSquares = (squares: Square[]) => {
         const newBoard = new Board(squares);
         setBoardAndHtml(newBoard);
+    };
+
+    const SetBoard = (board: Board) => {
+        setBoardAndHtml(board);
     };
     
     //This is used to update the HTML whenever the board in state is updated
@@ -331,8 +334,8 @@ export function Chess() {
             {board.gameState.inProgress && <CapturedPieces position='left' capturedPieces={board.gameState.capturedPieces}/>}
             {(board.outcome.checkmate || board.outcome.stalemate) && <GameOver outcome={board.outcome}/>}
             {(!board.gameState.inProgress && !(board.outcome.checkmate || board.outcome.stalemate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} />}
-            {!board.gameState.inProgress && <SentSuggestion boardToSuggest={board.squares} PreviewBoard={PreviewBoard}/>}
-            {!board.gameState.inProgress && <RecievedSuggestion PreviewBoard={PreviewBoard}/>}
+            {(!board.gameState.inProgress && onlineState?.lobby?.gameType === 'suggestion') && <SentSuggestion boardToSuggest={board.squares} SetSquares={SetSquares}/>}
+            {(!board.gameState.inProgress && onlineState?.lobby?.gameType === 'suggestion') && <RecievedSuggestion SetBoard={SetBoard} SetSquares={SetSquares}/>}
             {(board.gameState.promotions.white.length > 0 || board.gameState.promotions.black.length > 0) && board.gameState.inProgress && <Promotion PromotePiece={PromotePiece} colour={board.gameState.promotions.white.length > 0 ? 'white' : 'black'}/>}
             <div className="chess-container">
                 <div className="y-labels">

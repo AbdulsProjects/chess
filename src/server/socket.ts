@@ -240,7 +240,7 @@ wsServer.on('request', request => {
                     lobby.suggestedSquares[client.colour!] = [];
 
                     const payload = {
-                        method: 'cancel-suggestion',
+                        method: 'set-lobby',
                         lobby: obfuscateLobby(lobby),
                         status: 'succeeded',
                         message: null
@@ -279,6 +279,30 @@ wsServer.on('request', request => {
                         payload.opponentDeclined = true;
                         clients[opponentId].connection.send(JSON.stringify(payload));
                     };
+
+                    break;
+                }
+
+                //Accepting a suggestion
+                case 'accept-suggestion': {
+
+                    const client = clients[clientId];
+                    const lobby = lobbies[result.lobbyId]!;
+                    lobby.board = new Board([...lobby.suggestedSquares[client.colour === 'white' ? 'black' : 'white']]);
+                    //lobby.board.startGame;
+
+                    //Clearing the suggested squares for both colours to reduce future payload sizes
+                    lobby.suggestedSquares.white = [];
+                    lobby.suggestedSquares.black = [];
+
+                    const payload = {
+                        method: 'set-lobby',
+                        lobby: obfuscateLobby(lobby),
+                        status: 'succeeded',
+                        message: null
+                    };
+
+                    sendToMultipleClients([lobby.black!, lobby.white!], payload);
 
                     break;
                 }
