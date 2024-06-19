@@ -288,7 +288,7 @@ wsServer.on('request', request => {
 
                     const client = clients[clientId];
                     const lobby = lobbies[result.lobbyId]!;
-                    lobby.board = new Board([...lobby.suggestedSquares[client.colour === 'white' ? 'black' : 'white']]);
+                    //lobby.board = new Board([...lobby.suggestedSquares[client.colour === 'white' ? 'black' : 'white']]);
                     //lobby.board.startGame;
 
                     //Clearing the suggested squares for both colours to reduce future payload sizes
