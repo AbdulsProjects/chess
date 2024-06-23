@@ -2,6 +2,7 @@ import http from 'http';
 import { connection, server } from 'websocket';
 import crypto from 'crypto';
 import { Board, Square } from '@react-chess/shared/src/chess/board';
+import { Lobby, Lobbies } from '@react-chess/shared/src/chess/models/server-models';
 
 interface Clients {
     [clientId: string]: {
@@ -11,24 +12,6 @@ interface Clients {
     }
 }
 
-export interface Lobby {
-    lobbyId: string,
-    lobbyName: string,
-    lobbyPassword: string | null,
-    gameType: string,
-    white: string | null,
-    black: string | null,
-    board: Board | null,
-    suggestedSquares: {
-        white: Square[],
-        black: Square[]
-    }
-}
-
-export interface Lobbies {
-    [lobbyId: string]: Lobby
-}
-// "start": "concurrently \"npm run start-client\" \"npm run start-server\"",
 const clients: Clients = {};
 const lobbies: Lobbies = {};
 
