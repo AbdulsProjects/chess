@@ -1,45 +1,7 @@
 import http from 'http';
 import { connection, server } from 'websocket';
 import crypto from 'crypto';
-import { Board, Square } from '../../shared/chess/board';
-
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!MAKE SURE YOU CHANGE THE TYPE OF BOARD
-// export interface Square {
-//     id: string,
-//     piece: string | null,
-//     colour: 'black' | 'white' | null,
-//     x: number,
-//     y: number,
-//     firstTurn: boolean,
-//     targeting: TargetingSquare[],
-//     targetedBy: Target
-// };
-
-// export interface Target { 
-//     black: TargetingSquare[],
-//     white: TargetingSquare[]
-// };
-
-// export interface TargetingSquare {
-//     target: string,
-//     source: string,
-//     moveable: boolean,
-//     capture: boolean,
-//     moveOnly: boolean,
-//     castling: boolean,
-//     path: string[],
-//     blockedBy: {
-//         black: string[],
-//         white: string[]
-//     }
-// };
-
-// interface PiecesToAdd {
-//     squareId: string,
-//     pieceId: string,
-//     colour: 'black' | 'white'
-// };
-
+import { Board, Square } from '@react-chess/shared/src/chess/board';
 
 interface Clients {
     [clientId: string]: {
@@ -49,7 +11,6 @@ interface Clients {
     }
 }
 
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!MAKE SURE YOU CHANGE THE TYPE OF BOARD
 export interface Lobby {
     lobbyId: string,
     lobbyName: string,
@@ -57,7 +18,7 @@ export interface Lobby {
     gameType: string,
     white: string | null,
     black: string | null,
-    board: any | null
+    board: Board | null,
     suggestedSquares: {
         white: Square[],
         black: Square[]

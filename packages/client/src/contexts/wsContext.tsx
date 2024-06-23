@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, createContext, useRef, useState } from 'react';
-import { Lobby } from '../server/socket';
+import { Lobby } from '@react-chess/shared/src/chess/models/server-models';
 
 export interface OnlineState {
     wsConn: WebSocket | null,
