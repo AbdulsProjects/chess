@@ -13,3 +13,7 @@ export interface Lobby {
         black: Square[]
     }
 }
+
+export interface Lobbies {
+    [lobbyId: string]: Lobby
+}

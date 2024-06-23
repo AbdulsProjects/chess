@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useContext, useEffect, useState } from 'react';
 import './style.css'
 import { IWsContext, WsContext } from '../../../../../contexts/wsContext';
-import { Lobbies } from '../../../../../server/socket';
+import { Lobbies } from '@react-chess/shared/src/chess/models/server-models';
 import { PasswordPopup } from './password-popup';
 
 interface Props {
