@@ -30,7 +30,8 @@ export const RecievedSuggestion = (props: Props) => {
     const AcceptSuggestion = () => {
 
         createCallback('accept-suggestion', (response) => {
-            props.SetBoard(response.lobby.board);
+            const { _squares, _outcome, _gameState } = response.lobby.board;
+            props.SetBoard(new Board(_squares, _outcome, _gameState));
         });
 
         const payload = {
