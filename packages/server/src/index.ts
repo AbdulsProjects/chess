@@ -272,14 +272,16 @@ wsServer.on('request', request => {
                     const client = clients[clientId];
                     const lobby = lobbies[result.lobbyId]!;
                     lobby.board = new Board([...lobby.suggestedSquares[client.colour === 'white' ? 'black' : 'white']]);
-                    lobby.board.startGame;
+                    lobby.board.startGame();
+
+                    console.log(lobby.board);
 
                     //Clearing the suggested squares for both colours to reduce future payload sizes
                     lobby.suggestedSquares.white = [];
                     lobby.suggestedSquares.black = [];
 
                     const payload = {
-                        method: 'set-lobby',
+                        method: 'accept-suggestion',
                         lobby: obfuscateLobby(lobby),
                         status: 'succeeded',
                         message: null
