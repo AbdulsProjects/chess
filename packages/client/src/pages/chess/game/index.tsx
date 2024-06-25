@@ -111,7 +111,7 @@ export function Chess() {
     
     //This is used to update the HTML whenever the board in state is updated
     const setBoardAndHtml = (newBoard: Board) => {
-        
+
         //Determining what squares have changed in the state
         const differentSquares: Square[] = newBoard.squares.filter((square) => {
             const prevSquare: Square = boardRef.current!.squares.find(prevSquare => prevSquare.id === square.id)!;
@@ -142,6 +142,16 @@ export function Chess() {
             //Appending the new img element to the square div
             squareElement.appendChild(pieceImg);
             
+            //Updating the handlers if starting a game
+            if (!boardRef.current!.gameState.inProgress && newBoard.gameState.inProgress) {
+                const pieces = document!.querySelectorAll('[id$=Piece]');
+                console.log(pieces)
+                for (let i=0; i < pieces.length; i++) {
+                    pieces[i].addEventListener("click", (e) => SelectPiece(e));
+                    pieces[i].addEventListener("dragstart", (e) => SelectPiece(e));
+                };
+            };
+
             return undefined;
         });
                 
@@ -276,14 +286,7 @@ export function Chess() {
             return;
         };
 
-        //Updating the handlers of all pieces
-        const pieces = document!.querySelectorAll('[id$=Piece]');//getElementsByClassName("piece");
-        for (let i=0; i < pieces.length; i++) {
-            pieces[i].addEventListener("click", (e) => SelectPiece(e));
-            pieces[i].addEventListener("dragstart", (e) => SelectPiece(e));
-        };
-
-        setBoard(newBoard);
+        setBoardAndHtml(newBoard);
     };
 
     const SelectPiece = (e: Event) => {
@@ -335,7 +338,7 @@ export function Chess() {
             {(board.outcome.checkmate || board.outcome.stalemate) && <GameOver outcome={board.outcome}/>}
             {(!board.gameState.inProgress && !(board.outcome.checkmate || board.outcome.stalemate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} />}
             {(!board.gameState.inProgress && onlineState?.lobby?.gameType === 'suggestion') && <SentSuggestion boardToSuggest={board.squares} SetSquares={SetSquares}/>}
-            {(!board.gameState.inProgress && onlineState?.lobby?.gameType === 'suggestion') && <RecievedSuggestion SetBoard={SetBoard} SetSquares={SetSquares}/>}
+            {(!board.gameState.inProgress && onlineState?.lobby?.gameType === 'suggestion') && <RecievedSuggestion SetBoard={setBoardAndHtml} SetSquares={SetSquares}/>}
             {(board.gameState.promotions.white.length > 0 || board.gameState.promotions.black.length > 0) && board.gameState.inProgress && <Promotion PromotePiece={PromotePiece} colour={board.gameState.promotions.white.length > 0 ? 'white' : 'black'}/>}
             <div className="chess-container">
                 <div className="y-labels">
