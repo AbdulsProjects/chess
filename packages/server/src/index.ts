@@ -274,8 +274,6 @@ wsServer.on('request', request => {
                     lobby.board = new Board([...lobby.suggestedSquares[client.colour === 'white' ? 'black' : 'white']]);
                     lobby.board.startGame();
 
-                    console.log(lobby.board);
-
                     //Clearing the suggested squares for both colours to reduce future payload sizes
                     lobby.suggestedSquares.white = [];
                     lobby.suggestedSquares.black = [];
@@ -286,6 +284,37 @@ wsServer.on('request', request => {
                         status: 'succeeded',
                         message: null
                     };
+
+                    sendToMultipleClients([lobby.black!, lobby.white!], payload);
+
+                    break;
+                }
+
+                //In-game functions
+                case 'request-move': {
+                    
+                    const client = clients[clientId];
+                    const lobby = lobbies[result.lobbyId]!;
+                    const board = lobby.board!;
+                    const sourceSquare = board.squares.find((square: Square) => square.id === result.sourceSquareId)!;
+                    const targetSquare = board.squares.find((square: Square) => square.id === result.targetSquareId)!;
+
+
+                    //Exit if it's not the player's turn
+                    if (client.colour !== board.gameState.currentPlayer) {
+                        return;
+                    };
+
+                    const response = board.requestMove(sourceSquare, targetSquare);
+
+                    const payload = {
+                        method: 'request-move',
+                        colour: client.colour,
+                        lobby: lobby,
+                        action: response.action
+                    };
+
+                    if (payload.action === null) { return; }
 
                     sendToMultipleClients([lobby.black!, lobby.white!], payload);
 

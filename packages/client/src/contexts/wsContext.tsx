@@ -122,6 +122,12 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
 
                     break;
                 }
+
+                //In-game functions
+                case 'request-move': {
+                    //Update the board
+                    //Play the sound
+                }
             };
         }
 

@@ -2,7 +2,7 @@ import './style.css'
 import '../style.css'
 import { SmallBoard } from '../small-board';
 import { Board, Square } from '../../../board';
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { IWsContext, WsContext } from '../../../../../contexts/wsContext';
 
 interface Props {
@@ -14,6 +14,14 @@ export const RecievedSuggestion = (props: Props) => {
 
     const { onlineState, createCallback }  = useContext(WsContext) as IWsContext;
     const currentSuggestion = onlineState.lobby?.suggestedSquares[onlineState.colour === 'white' ? 'black' : 'white'];
+
+    //Creating the callback for accepting a suggestion
+    useEffect(() => {
+        createCallback('accept-suggestion', (response) => {
+            const { _squares, _outcome, _gameState } = response.lobby.board;
+            props.SetBoard(new Board(_squares, _outcome, _gameState));
+        });
+    }, []);
 
     const DeclineSuggestion = () => {
         
@@ -28,11 +36,6 @@ export const RecievedSuggestion = (props: Props) => {
     };
 
     const AcceptSuggestion = () => {
-
-        createCallback('accept-suggestion', (response) => {
-            const { _squares, _outcome, _gameState } = response.lobby.board;
-            props.SetBoard(new Board(_squares, _outcome, _gameState));
-        });
 
         const payload = {
             method: 'accept-suggestion',
