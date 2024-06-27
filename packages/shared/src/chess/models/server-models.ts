@@ -1,3 +1,4 @@
+import { Board } from "../board"
 import { Square } from "./chess-models"
 
 export interface Lobby {
@@ -7,7 +8,7 @@ export interface Lobby {
     gameType: string,
     white: string | null,
     black: string | null,
-    board: any | null
+    board: Board | null
     suggestedSquares: {
         white: Square[],
         black: Square[]

@@ -51,7 +51,7 @@ export function Chess() {
 
     const boardRef = useRef<Board>();
 
-    const { onlineState }  = useContext(WsContext) as IWsContext;
+    const { onlineState, createCallback }  = useContext(WsContext) as IWsContext;
 
     boardRef.current = board;
 
@@ -97,16 +97,26 @@ export function Chess() {
         };
     }, [board]);
 
+    //Setting up the callbacks for online functionality
+    useEffect(() => {
+        
+        //Moving a piece
+        createCallback('request-move', (response) => {
+            const {_squares, _outcome, _gameState} = response.lobby.board;
+            const newBoard = new Board(_squares, _outcome, _gameState);
+            setBoardAndHtml(newBoard);
+            const moveAudio = new Audio('audio/' + response.action + '.mp3');
+            moveAudio.play();
+        });
+
+    }, []);
+
     //General Functions
 
     //This is used to preview a suggested board
     const SetSquares = (squares: Square[]) => {
         const newBoard = new Board(squares);
         setBoardAndHtml(newBoard);
-    };
-
-    const SetBoard = (board: Board) => {
-        setBoardAndHtml(board);
     };
     
     //This is used to update the HTML whenever the board in state is updated
@@ -141,20 +151,20 @@ export function Chess() {
             
             //Appending the new img element to the square div
             squareElement.appendChild(pieceImg);
-            
-            //Updating the handlers if starting a game
-            if (!boardRef.current!.gameState.inProgress && newBoard.gameState.inProgress) {
-                const pieces = document!.querySelectorAll('[id$=Piece]');
-                console.log(pieces)
-                for (let i=0; i < pieces.length; i++) {
-                    pieces[i].addEventListener("click", (e) => SelectPiece(e));
-                    pieces[i].addEventListener("dragstart", (e) => SelectPiece(e));
-                };
-            };
 
             return undefined;
         });
-                
+           
+        //Updating the handlers if starting a game
+        if (!boardRef.current!.gameState.inProgress && newBoard.gameState.inProgress) {
+            const pieces = document!.querySelectorAll('[id$=Piece]');
+            console.log(pieces)
+            for (let i=0; i < pieces.length; i++) {
+                pieces[i].addEventListener("click", (e) => SelectPiece(e));
+                pieces[i].addEventListener("dragstart", (e) => SelectPiece(e));
+            };
+        };
+
         //Updating the board in state
         setBoard(newBoard);
     };
@@ -231,11 +241,27 @@ export function Chess() {
             const move = targeting.find(targettingSquares => targettingSquares.target === targetSquare!.id && targettingSquares.moveable);
             if (!move) { return; }
 
-            const response = newBoard.requestMove(sourceSquare, targetSquare);
+            if (onlineState.lobby !== undefined) {
+                
+                //Online behaviour
+                const payload = {
+                    method: 'request-move',
+                    sourceSquareId: sourceSquare.id,
+                    targetSquareId: targetSquare.id,
+                    clientId: onlineState.clientId,
+                    lobbyId: onlineState.lobby!.lobbyId
+                };
+        
+                onlineState.wsConn!.send(JSON.stringify(payload));
 
-            if (response.succeeded && response.action) {
-                const moveAudio = new Audio('audio/' + response.action + '.mp3');
-                moveAudio.play();
+            } else {
+                //Local behaviour
+                const response = newBoard.requestMove(sourceSquare, targetSquare);
+    
+                if (response.succeeded && response.action) {
+                    const moveAudio = new Audio('audio/' + response.action + '.mp3');
+                    moveAudio.play();
+                };
             };
             
             RemoveHighlights();
