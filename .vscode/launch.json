@@ -1,0 +1,24 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "command": "npm run start -w packages/server",
+            "name": "Debug Server",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Debug Client",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/packages/client"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Debug Server & Client",
+            "configurations": ["Debug Server", "Debug Client"]
+        }
+    ]
+}
