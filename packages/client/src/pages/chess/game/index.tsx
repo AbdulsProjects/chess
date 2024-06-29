@@ -318,6 +318,7 @@ export function Chess() {
     const SelectPiece = (e: Event) => {
 
         if (DisableInteractivity()) { return; }
+
         //Removing highlights from currently highlighted piece
         RemoveHighlights();
 
@@ -329,7 +330,7 @@ export function Chess() {
         if (!squareObj) { return; }
 
         //Returning if trying to grab the other player's piece
-        if (squareObj.colour !== boardRef.current!.gameState.currentPlayer) { return; }
+        if ((squareObj.colour !== boardRef.current!.gameState.currentPlayer) || (onlineState.lobby !== undefined && onlineState.colour !== squareObj.colour)) { return; }
 
         // //Adding a highlight to all possible moves
         piece.parentElement.classList.add("highlight-select");
