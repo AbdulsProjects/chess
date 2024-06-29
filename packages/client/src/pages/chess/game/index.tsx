@@ -144,7 +144,7 @@ export function Chess() {
             pieceImg.alt = square.colour + ' ' + square.piece
             pieceImg.src = 'img/' + square.colour + '_' + square.piece + '.png'
             pieceImg.addEventListener("dragstart", (e: any) => DragPiece(e, square.colour!, square.piece!));
-            if (board.gameState.inProgress) {
+            if (newBoard.gameState.inProgress) {
                 pieceImg.addEventListener("click", (e) => SelectPiece(e));
                 pieceImg.addEventListener("dragstart", (e) => SelectPiece(e));
             };
@@ -158,7 +158,6 @@ export function Chess() {
         //Updating the handlers if starting a game
         if (!boardRef.current!.gameState.inProgress && newBoard.gameState.inProgress) {
             const pieces = document!.querySelectorAll('[id$=Piece]');
-            console.log(pieces)
             for (let i=0; i < pieces.length; i++) {
                 pieces[i].addEventListener("click", (e) => SelectPiece(e));
                 pieces[i].addEventListener("dragstart", (e) => SelectPiece(e));
