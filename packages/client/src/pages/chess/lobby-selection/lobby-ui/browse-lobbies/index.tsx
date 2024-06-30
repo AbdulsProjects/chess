@@ -44,7 +44,7 @@ export const BrowseLobbies = (props: Props) => {
         }
     }, [onlineState])
 
-    //Clearing the joiningLobbyId if the password popup isnt visible
+    //Clearing the joining LobbyId if the password popup isnt visible
     useEffect(() => {
         if (!showPasswordInput) {
             setJoiningLobbyId(null);

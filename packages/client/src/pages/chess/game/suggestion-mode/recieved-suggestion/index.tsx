@@ -1,7 +1,7 @@
 import './style.css'
 import '../style.css'
 import { SmallBoard } from '../small-board';
-import { Board, Square } from '../../../board';
+import { Board, Square } from '@react-chess/shared/src/chess/board';
 import { useContext, useEffect } from 'react';
 import { IWsContext, WsContext } from '../../../../../contexts/wsContext';
 
