@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "concurrently \"npm run start -w packages/server\" \"npm run start -w packages/client\""
+    "start": "concurrently \"npm run server\" \"npm run start -w packages/client\"",
+    "client": "npm run start -w packages/client",
+    "server": "npm run start -w packages/server"
   },
   "keywords": [],
   "author": "",

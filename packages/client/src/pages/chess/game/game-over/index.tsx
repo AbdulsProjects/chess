@@ -1,4 +1,4 @@
-import { Outcome } from '../../board';
+import { Outcome } from '@react-chess/shared/src/chess/board';
 import './style.css'
 
 export const GameOver = (props: {outcome: Outcome}) => {

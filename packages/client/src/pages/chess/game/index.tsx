@@ -5,7 +5,7 @@ import { Promotion } from "./promotion"
 import { GameOver } from "./game-over"
 import { PreGame } from "./pre-game"
 import { CapturedPieces } from "./captured-pieces"
-import { Board, Square, TargetingSquare } from "../board"
+import { Board, Square, TargetingSquare } from "@react-chess/shared/src/chess/board"
 import { SentSuggestion } from "./suggestion-mode/sent-suggestion"
 import { RecievedSuggestion } from "./suggestion-mode/recieved-suggestion"
 import { IWsContext, WsContext } from "../../../contexts/wsContext"
@@ -108,8 +108,16 @@ export function Chess() {
             const moveAudio = new Audio('audio/' + response.action + '.mp3');
             moveAudio.play();
         });
-
     }, []);
+
+    //Updating the board if joining a game that's in progress
+    useEffect(() => {
+        // if (onlineState.lobby?.board?.gameState.inProgress) { 
+        //     const onlineBoard = onlineState.lobby.board!;
+        //     const newBoard = new Board(onlineBoard.squares, onlineBoard.outcome, onlineBoard.gameState);
+        //     setBoardAndHtml(newBoard);
+        // };
+    },[])
 
     //General Functions
 

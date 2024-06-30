@@ -1,4 +1,4 @@
-import { Square } from '../../../board'
+import { Square } from '@react-chess/shared/src/chess/board'
 import './style.css'
 import React, { useEffect } from 'react'
 

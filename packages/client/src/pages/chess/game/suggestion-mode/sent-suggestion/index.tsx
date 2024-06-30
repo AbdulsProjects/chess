@@ -2,7 +2,7 @@ import './style.css'
 import '../style.css'
 import React, { useContext, useEffect, useState } from 'react'
 import { SmallBoard } from '../small-board';
-import { Square } from '../../../board';
+import { Square } from '@react-chess/shared/src/chess/board';
 import { IWsContext, WsContext } from '../../../../../contexts/wsContext';
 
 interface Props {

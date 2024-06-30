@@ -1,5 +1,6 @@
 import { Dispatch, SetStateAction, createContext, useRef, useState } from 'react';
 import { Lobby } from '@react-chess/shared/src/chess/models/server-models';
+import { Board } from '@react-chess/shared/src/chess/board'
 
 export interface OnlineState {
     wsConn: WebSocket | null,
@@ -10,7 +11,7 @@ export interface OnlineState {
 
 export interface IWsContext {
     onlineState: OnlineState,
-    setOnlineState: Dispatch<SetStateAction<OnlineState>>,
+    setOnlineStateCustom: (generateNewState: (prevState: OnlineState) => OnlineState) => void,
     Connect: () => void,
     createCallback: (method: string, callback: (response: any) => void) => void
 };
@@ -34,6 +35,26 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
         callbacks.current[method] = callback;
     };
 
+    //Custom set state hook used to initialise the board as an instance of the class if needed
+    const setOnlineStateCustom = (generateNewState: (prevState: OnlineState) => OnlineState) => {
+        setOnlineState((prevState) => {
+            const newState = generateNewState(prevState);
+
+            //This captures scenarios where the board isn't actually initialised as an instance of Board
+            if (newState.lobby?.board && newState.lobby.board.squares === undefined) {
+                const boardAsAny: any = newState.lobby.board
+                const { _squares, _outcome, _gameState } = boardAsAny;
+                const newBoard = new Board(_squares, _outcome, _gameState);
+
+                newState.lobby.board = newBoard;
+            }
+
+            return{
+                ...generateNewState(prevState)
+            }
+        });
+    }
+
     const Connect = () => {
 
         const ws = new WebSocket('ws://localhost:8080');
@@ -50,7 +71,7 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
             switch(response.method) {
                 //Connecting to the server
                 case 'connect': {
-                    setOnlineState(prevState => ({
+                    setOnlineStateCustom(prevState => ({
                         ...prevState,
                         wsConn: ws,
                         clientId: response.clientId
@@ -65,7 +86,7 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
                         return;
                     };
 
-                    setOnlineState(prevState => ({
+                    setOnlineStateCustom(prevState => ({
                         ...prevState,
                         colour: 'white',
                         lobby: response.lobby
@@ -75,8 +96,8 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
 
                 //Joining a lobby
                 case 'join': {
-                    if (response.status === 'succeeded') {
-                        setOnlineState(prevState => ({
+                    if (response.status === 'succeeded') {                        
+                        setOnlineStateCustom(prevState => ({
                             ...prevState,
                             colour: response.colour,
                             lobby: response.lobby
@@ -90,7 +111,7 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
                 //Suggesting a board in the suggestion game type
                 case 'suggest-board': {
                     if (response.status === 'succeeded') {
-                        setOnlineState(prevState => ({
+                        setOnlineStateCustom(prevState => ({
                             ...prevState,
                             lobby: response.lobby
                         }));
@@ -102,7 +123,7 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
 
                 //Cancelling / accepting your current suggestion
                 case 'set-lobby': {
-                    setOnlineState(prevState => ({
+                    setOnlineStateCustom(prevState => ({
                         ...prevState,
                         lobby: response.lobby
                     }));
@@ -111,7 +132,7 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
 
                 //Declining a suggestion
                 case 'decline-suggestion': {
-                    setOnlineState(prevState => ({
+                    setOnlineStateCustom(prevState => ({
                         ...prevState,
                         lobby: response.lobby
                     }));
@@ -123,20 +144,22 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
                     break;
                 }
 
-                //In-game functions
+                case 'opponent-disconnected': {
+                    alert("Your opponent has left the lobby");
+                    break;
+                }
+
                 case 'request-move': {
-                    //Update the board
-                    //Play the sound
+                    setOnlineStateCustom(prevState => ({
+                        ...prevState,
+                        lobby: response.lobby
+                    }));
                 }
             };
         }
-
-        ws.addEventListener("open", () => {
-            
-        })
     }
 
     return (
-        <WsContext.Provider value={{onlineState, setOnlineState, Connect, createCallback}}>{children}</WsContext.Provider>
+        <WsContext.Provider value={{onlineState, setOnlineStateCustom, Connect, createCallback}}>{children}</WsContext.Provider>
     )
 }

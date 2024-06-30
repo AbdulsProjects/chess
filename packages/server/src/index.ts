@@ -42,6 +42,30 @@ wsServer.on('request', request => {
     const connection = request.accept(null, request.origin);
 
     connection.on('close', () => {
+        
+        //Alerting the other user if the player left mid game
+        const client = clients[clientId];
+
+        //Removing the client from the lobby
+        if (client.lobbyId !== null) {
+            
+            const lobby = lobbies[client.lobbyId];
+
+            //Closing the lobby if the client was the only player, else notifying the remaining player that the other player has left
+            if (!(lobby.black && lobby.white)) {
+                delete lobbies[client.lobbyId];
+            } else {
+                lobby[client.colour!] = null;
+
+                const payload = {
+                    method: 'opponent-disconnected',
+                };
+
+                const opponentColour = client.colour === 'black' ? 'white' : 'black';
+                clients[lobby[opponentColour]!].connection.send(JSON.stringify(payload));
+            };
+        };
+
         delete clients[clientId];
     });
     
