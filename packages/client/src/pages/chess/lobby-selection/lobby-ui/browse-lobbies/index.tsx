@@ -13,7 +13,7 @@ export const BrowseLobbies = (props: Props) => {
 
     const [lobbies, setLobbies] = useState<Lobbies>({});
 
-    const { onlineState, createCallback }  = useContext(WsContext) as IWsContext;
+    const { onlineState }  = useContext(WsContext) as IWsContext;
 
     const [showPasswordInput, setShowPasswordInput] = useState(false);
 
@@ -23,8 +23,11 @@ export const BrowseLobbies = (props: Props) => {
     useEffect(() => {
         
         //Creating the callback function to save the lobbies to state
-        createCallback('return-lobbies', (response) => {
-            setLobbies(response.lobbies);
+        onlineState.wsConn?.addEventListener("message", (event) => {
+            const data = JSON.parse(event.data);
+            if (data.method === 'return-lobbies') {
+                setLobbies(data.lobbies);
+            };
         });
 
         //Sending the request to return the lobbies

@@ -1,14 +1,14 @@
-import "./style.css"
-import React, { useContext, useEffect, useRef, useState } from 'react'
-import { Piece } from "./pieces"
-import { Promotion } from "./promotion"
-import { GameOver } from "./game-over"
-import { PreGame } from "./pre-game"
-import { CapturedPieces } from "./captured-pieces"
-import { Board, Square, TargetingSquare } from "@react-chess/shared/src/chess/board"
-import { SentSuggestion } from "./suggestion-mode/sent-suggestion"
-import { RecievedSuggestion } from "./suggestion-mode/recieved-suggestion"
-import { IWsContext, WsContext } from "../../../contexts/wsContext"
+import "./style.css";
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { Piece } from "./pieces";
+import { Promotion } from "./promotion";
+import { GameOver } from "./game-over";
+import { PreGame } from "./pre-game";
+import { CapturedPieces } from "./captured-pieces";
+import { Board, Square, TargetingSquare } from "@react-chess/shared/src/chess/board";
+import { SentSuggestion } from "./suggestion-mode/sent-suggestion";
+import { RecievedSuggestion } from "./suggestion-mode/recieved-suggestion";
+import { IWsContext, WsContext } from "../../../contexts/wsContext";
 
 //THINGS TO DO
 //Split the drop handler for on / off board and allow the removal of pieces using a double click
@@ -51,7 +51,7 @@ export function Chess() {
 
     const boardRef = useRef<Board>();
 
-    const { onlineState, createCallback }  = useContext(WsContext) as IWsContext;
+    const { onlineState }  = useContext(WsContext) as IWsContext;
 
     boardRef.current = board;
 
@@ -101,13 +101,18 @@ export function Chess() {
     useEffect(() => {
         
         //Moving a piece
-        createCallback('request-move', (response) => {
-            const {_squares, _outcome, _gameState} = response.lobby.board;
-            const newBoard = new Board(_squares, _outcome, _gameState);
-            setBoardAndHtml(newBoard);
-            const moveAudio = new Audio('audio/' + response.action + '.mp3');
-            moveAudio.play();
+        onlineState.wsConn?.addEventListener("message", (event) => {
+            const data = JSON.parse(event.data);
+            if (data.method === 'request-move') {
+                console.log("test");
+                const {_squares, _outcome, _gameState} = data.lobby.board;
+                const newBoard = new Board(_squares, _outcome, _gameState);
+                setBoardAndHtml(newBoard);
+                const moveAudio = new Audio('audio/' + data.action + '.mp3');
+                moveAudio.play();
+            };
         });
+
     }, []);
 
     //Updating the board if joining a game that's in progress
