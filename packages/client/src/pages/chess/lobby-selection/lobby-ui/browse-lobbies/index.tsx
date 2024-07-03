@@ -22,13 +22,15 @@ export const BrowseLobbies = (props: Props) => {
     //Returning the list of lobbies
     useEffect(() => {
         
-        //Creating the callback function to save the lobbies to state
-        onlineState.wsConn?.addEventListener("message", (event) => {
+        const returnLobbies = (event: MessageEvent<any>) => {
             const data = JSON.parse(event.data);
             if (data.method === 'return-lobbies') {
                 setLobbies(data.lobbies);
             };
-        });
+        };
+
+        //Creating the callback function to save the lobbies to state
+        onlineState.wsConn?.addEventListener("message", returnLobbies);
 
         //Sending the request to return the lobbies
         const payLoad = {
@@ -37,6 +39,11 @@ export const BrowseLobbies = (props: Props) => {
         };
 
         onlineState.wsConn!.send(JSON.stringify(payLoad));
+
+        //Removing the event handler on unmount
+        return () => {
+            onlineState.wsConn?.removeEventListener("message", returnLobbies);
+        };
     }, [])
 
     //Displaying the board once a lobby has been joined

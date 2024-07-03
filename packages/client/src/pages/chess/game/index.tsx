@@ -100,8 +100,7 @@ export function Chess() {
     //Setting up the callbacks for online functionality
     useEffect(() => {
         
-        //Moving a piece
-        onlineState.wsConn?.addEventListener("message", (event) => {
+        const requestMove = (event: MessageEvent<any>) => {
             const data = JSON.parse(event.data);
             if (data.method === 'request-move') {
                 console.log("test");
@@ -111,7 +110,15 @@ export function Chess() {
                 const moveAudio = new Audio('audio/' + data.action + '.mp3');
                 moveAudio.play();
             };
-        });
+        }
+
+        //Moving a piece
+        onlineState.wsConn?.addEventListener("message", requestMove);
+
+        //Removing the event handler on unmount
+        return () => {
+            onlineState.wsConn?.removeEventListener("message", requestMove);
+        };
 
     }, []);
 
