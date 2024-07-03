@@ -14,7 +14,7 @@ export const SentSuggestion = (props: Props) => {
 
     const { onlineState }  = useContext(WsContext) as IWsContext;
     const currentSuggestion = onlineState.lobby?.suggestedSquares[onlineState.colour!];
-
+    
     //Suggesting the current board
     const SuggestBoard = () => {
 
