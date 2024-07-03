@@ -17,13 +17,21 @@ export const RecievedSuggestion = (props: Props) => {
 
     //Creating a listener for accepting a suggestion
     useEffect(()=>{
-        onlineState.wsConn?.addEventListener("message", (event) => {
+    
+        const acceptSuggestion = (event: MessageEvent<any>) => {
             const data = JSON.parse(event.data);
             if (data.method === 'accept-suggestion') {
                 const { _squares, _outcome, _gameState } = data.lobby.board;
                 props.SetBoard(new Board(_squares, _outcome, _gameState));
             };
-        });
+        }
+
+        onlineState.wsConn?.addEventListener("message", acceptSuggestion);
+
+        //Removing the event listener on unmount
+        return () => {
+            onlineState.wsConn?.removeEventListener("message", acceptSuggestion);
+        }
     },[]);
 
     const DeclineSuggestion = () => {

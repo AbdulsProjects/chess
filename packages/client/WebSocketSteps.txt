@@ -12,8 +12,3 @@ Have a local mode that works as it currently does, but add the option to create 
 
 KNOWN ISSUES
 Bad actors can most likely break the server by modifying the intended JSON structure sent to the server due to the JSON.stringify (basically just an injection attack)
-
-NEXT STEPS
-- Implement suggesting a board
-
-
