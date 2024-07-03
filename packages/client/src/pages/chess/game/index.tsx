@@ -112,11 +112,11 @@ export function Chess() {
 
     //Updating the board if joining a game that's in progress
     useEffect(() => {
-        // if (onlineState.lobby?.board?.gameState.inProgress) { 
-        //     const onlineBoard = onlineState.lobby.board!;
-        //     const newBoard = new Board(onlineBoard.squares, onlineBoard.outcome, onlineBoard.gameState);
-        //     setBoardAndHtml(newBoard);
-        // };
+        if (onlineState.lobby?.board?.gameState.inProgress) { 
+            const onlineBoard = onlineState.lobby.board!;
+            const newBoard = new Board(onlineBoard.squares, onlineBoard.outcome, onlineBoard.gameState);
+            setBoardAndHtml(newBoard);
+        };
     },[])
 
     //General Functions
