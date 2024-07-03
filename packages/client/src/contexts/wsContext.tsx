@@ -12,8 +12,7 @@ export interface OnlineState {
 export interface IWsContext {
     onlineState: OnlineState,
     setOnlineStateCustom: (generateNewState: (prevState: OnlineState) => OnlineState) => void,
-    Connect: () => void,
-    createCallback: (method: string, callback: (response: any) => void) => void
+    Connect: () => void
 };
 
 export const WsContext = createContext<IWsContext | null>(null);
@@ -26,14 +25,6 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
         colour: undefined,
         lobby: undefined
     });
-    
-    //Creating a hash map of callback functions to allow the response to be easily accessed within consuming components
-    const callbacks = useRef<{[method: string]: (response: any) => void}>({});
-    
-    //Creating a function that can be used to append to the callBacks hash map
-    const createCallback = (method: string, callback: (response: any) => void) => {
-        callbacks.current[method] = callback;
-    };
 
     //Custom set state hook used to initialise the board as an instance of the class if needed
     const setOnlineStateCustom = (generateNewState: (prevState: OnlineState) => OnlineState) => {
@@ -62,11 +53,6 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
         ws.onmessage = message => {
             
             const response = JSON.parse(message.data);
-            
-            //Executing the callback function if one is specified for the current method, allowing easier access to the response from consuming components
-            if (callbacks.current[response.method]) {
-                callbacks.current[response.method](response);
-            };
 
             switch(response.method) {
                 //Connecting to the server
@@ -160,6 +146,6 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
     }
 
     return (
-        <WsContext.Provider value={{onlineState, setOnlineStateCustom, Connect, createCallback}}>{children}</WsContext.Provider>
+        <WsContext.Provider value={{onlineState, setOnlineStateCustom, Connect}}>{children}</WsContext.Provider>
     )
 }

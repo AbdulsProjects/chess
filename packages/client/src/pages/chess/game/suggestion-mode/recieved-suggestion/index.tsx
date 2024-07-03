@@ -12,25 +12,19 @@ interface Props {
 
 export const RecievedSuggestion = (props: Props) => {
 
-    const { onlineState, createCallback }  = useContext(WsContext) as IWsContext;
+    const { onlineState }  = useContext(WsContext) as IWsContext;
     const currentSuggestion = onlineState.lobby?.suggestedSquares[onlineState.colour === 'white' ? 'black' : 'white'];
 
-    onlineState.wsConn?.addEventListener("message", (event) => {
-        const data = JSON.parse(event.data);
-        if (data.method === 'accept-suggestion') {
-            console.log("hit")
-            const { _squares, _outcome, _gameState } = data.lobby.board;
-            props.SetBoard(new Board(_squares, _outcome, _gameState));
-        };
-    });
-
-    //Creating the callback for accepting a suggestion
-    // useEffect(() => {
-    //     createCallback('accept-suggestion', (response) => {
-    //         const { _squares, _outcome, _gameState } = response.lobby.board;
-    //         props.SetBoard(new Board(_squares, _outcome, _gameState));
-    //     });
-    // }, []);
+    //Creating a listener for accepting a suggestion
+    useEffect(()=>{
+        onlineState.wsConn?.addEventListener("message", (event) => {
+            const data = JSON.parse(event.data);
+            if (data.method === 'accept-suggestion') {
+                const { _squares, _outcome, _gameState } = data.lobby.board;
+                props.SetBoard(new Board(_squares, _outcome, _gameState));
+            };
+        });
+    },[]);
 
     const DeclineSuggestion = () => {
         
