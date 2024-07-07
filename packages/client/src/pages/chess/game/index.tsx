@@ -103,7 +103,6 @@ export function Chess() {
         const requestMove = (event: MessageEvent<any>) => {
             const data = JSON.parse(event.data);
             if (data.method === 'request-move') {
-                console.log("test");
                 const {_squares, _outcome, _gameState} = data.lobby.board;
                 const newBoard = new Board(_squares, _outcome, _gameState);
                 setBoardAndHtml(newBoard);
@@ -381,7 +380,7 @@ export function Chess() {
     return (
         <div className='chess-main-container' onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
             {board.gameState.inProgress && <CapturedPieces position='left' capturedPieces={board.gameState.capturedPieces}/>}
-            {(board.outcome.checkmate || board.outcome.stalemate) && <GameOver outcome={board.outcome}/>}
+            {(board.outcome.checkmate || board.outcome.stalemate) && <GameOver outcome={board.outcome} setBoardAndHtml={setBoardAndHtml} board={board}/>}
             {(!board.gameState.inProgress && !(board.outcome.checkmate || board.outcome.stalemate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} />}
             {(!board.gameState.inProgress && onlineState?.lobby?.gameType === 'suggestion') && <SentSuggestion boardToSuggest={board.squares} SetSquares={SetSquares}/>}
             {(!board.gameState.inProgress && onlineState?.lobby?.gameType === 'suggestion') && <RecievedSuggestion SetBoard={setBoardAndHtml} SetSquares={SetSquares}/>}

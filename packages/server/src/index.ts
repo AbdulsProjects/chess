@@ -1,5 +1,5 @@
 import http from 'http';
-import { connection, server } from 'websocket';
+import { client, connection, server } from 'websocket';
 import crypto from 'crypto';
 import { Board, Square } from '@react-chess/shared/src/chess/board';
 import { Lobby, Lobbies } from '@react-chess/shared/src/chess/models/server-models';
@@ -314,6 +314,28 @@ wsServer.on('request', request => {
                     break;
                 }
 
+                //Restarting a game
+                case 'restart-game': {
+                    
+                    const client = clients[clientId];
+                    const lobby = lobbies[result.lobbyId]!;
+                    const board = lobby.board!;
+
+                    //Resetting the board if the game is in an end state
+                    if (board.outcome.checkmate || board.outcome.stalemate) {
+                        lobby.suggestedSquares.black = [];
+                        lobby.suggestedSquares.white = [];
+                        board.reset();
+                    };
+
+                    const payload = {
+                        method: 'restart-game',
+                        lobby: obfuscateLobby(lobby)
+                    };
+
+                    client.connection.send(JSON.stringify(payload));
+                }
+
                 //In-game functions
                 case 'request-move': {
                     
@@ -334,7 +356,7 @@ wsServer.on('request', request => {
                     const payload = {
                         method: 'request-move',
                         colour: client.colour,
-                        lobby: lobby,
+                        lobby: obfuscateLobby(lobby),
                         action: response.action
                     };
 

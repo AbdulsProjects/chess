@@ -349,6 +349,31 @@ export class Board {
         });
     };
 
+    //Completely restarting the state of the board
+    reset() {
+        this.clearBoard();
+        this._outcome = {
+            target: null, 
+            targettedBy: [], 
+            check: false, 
+            checkmate: false, 
+            stalemate: false
+        };
+        this._gameState = {
+            inProgress: false,
+            currentPlayer: 'white',
+            promotions: {
+                black: [],
+                white: [],
+                nextPromotion: null
+            },
+            capturedPieces: {
+                black: [],
+                white: []
+            }
+        };
+    };
+
     //Checking for checkmates / stalemates. The firstBlackCheck param is used when starting the game as black can't start in check / stalemate since it's white's turn
     checkForChecks(colour: 'black' | 'white', firstBlackCheck = false) {
 
