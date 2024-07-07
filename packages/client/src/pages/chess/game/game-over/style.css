@@ -15,3 +15,8 @@
 .chess-game-over-container > p > a:hover {
     color: rgb(184, 178, 178);
 }
+
+.play-again {
+    text-decoration: underline;
+    cursor: pointer;
+}
