@@ -26,6 +26,12 @@ export const CreateLobby = (props: Props) => {
 
     const CreateLobby = (lobbyName: string, lobbyPassword: string | null, gameType: 'sandbox' | 'suggestion' | 'restricted') => {
         
+        if (!onlineState.wsConn) {
+            alert('Unable to connect to the server. Please try again or play locally');
+            window.location.reload();
+            return;
+        }
+
         const payLoad = {
             method: 'create',
             clientId: onlineState.clientId,

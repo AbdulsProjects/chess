@@ -22,7 +22,7 @@ export const LobbyUi = (props: Props) => {
             </div>
             <div className='lobby-ui-content'>
                 {showTab === 'Create' && <CreateLobby setShowBoard={props.setShowBoard} setShowLobbyUi={props.setShowLobbyUi}/>}
-                {showTab === 'Browse' && <BrowseLobbies setShowBoard={props.setShowBoard} setShowLobbyUi={props.setShowLobbyUi}/>}
+                {showTab === 'Browse' && <BrowseLobbies setShowBoard={props.setShowBoard} setShowLobbyUi={props.setShowLobbyUi} setShowTab={setShowTab}/>}
             </div>
         </div>
     )

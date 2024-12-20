@@ -6,7 +6,8 @@ import { PasswordPopup } from './password-popup';
 
 interface Props {
     setShowLobbyUi: Dispatch<SetStateAction<boolean>>,
-    setShowBoard: Dispatch<SetStateAction<boolean>>
+    setShowBoard: Dispatch<SetStateAction<boolean>>,
+    setShowTab: Dispatch<React.SetStateAction<string>>
 }
 
 export const BrowseLobbies = (props: Props) => {
@@ -29,8 +30,14 @@ export const BrowseLobbies = (props: Props) => {
             };
         };
 
+        if (!onlineState.wsConn) {
+            alert('Unable to connect to the server. Please try again or play locally');
+            window.location.reload();
+            return;
+        }
+
         //Creating the callback function to save the lobbies to state
-        onlineState.wsConn?.addEventListener("message", returnLobbies);
+        onlineState.wsConn.addEventListener("message", returnLobbies);
 
         //Sending the request to return the lobbies
         const payLoad = {
@@ -38,7 +45,7 @@ export const BrowseLobbies = (props: Props) => {
             clientId: onlineState.clientId,
         };
 
-        onlineState.wsConn!.send(JSON.stringify(payLoad));
+        onlineState.wsConn.send(JSON.stringify(payLoad));
 
         //Removing the event handler on unmount
         return () => {

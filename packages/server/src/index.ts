@@ -1,5 +1,5 @@
 import http from 'http';
-import { client, connection, server } from 'websocket';
+import { connection, server } from 'websocket';
 import crypto from 'crypto';
 import { Board, Square } from '@react-chess/shared/src/chess/board';
 import { Lobby, Lobbies } from '@react-chess/shared/src/chess/models/server-models';
@@ -8,15 +8,43 @@ interface Clients {
     [clientId: string]: {
         connection: connection,
         lobbyId: string | null,
-        colour: 'black' | 'white' | null
+        colour: 'black' | 'white' | null,
+        isAlive: boolean
     }
 }
 
 const clients: Clients = {};
 const lobbies: Lobbies = {};
 
+//Heartbeat to ensure all connections are still alive
+//Loop through all ws connections
+//Send a ping to each one
+//If a pong isn't recieved, close the connection
+//If it is, keep the connection open and queue the next ping after a set delay
+//Send the first ping on ws open
+const heartbeat = setInterval(() => {
+    for (const clientId in clients) {
+        
+        const client = clients[clientId];
+        //Removing dead connections
+        if (!client.isAlive) {
+            client.connection.close();
+            delete clients[clientId];
+            return;
+        }
+        
+        client.isAlive = false;
+        client.connection.send(JSON.stringify({
+            method: 'ping',
+            clientId: clientId
+        }));
+    }
+}, 20000)
+
 const httpServer = http.createServer();
-httpServer.listen(8080, () => console.log('Listening'));
+httpServer.listen(8080, () => {
+    console.log('Listening');
+});
 
 const wsServer = new server({
     'httpServer': httpServer
@@ -40,14 +68,13 @@ const obfuscateLobby = (lobby: Lobby): Lobby => {
 
 wsServer.on('request', request => {
     const connection = request.accept(null, request.origin);
-
     connection.on('close', () => {
         
         //Alerting the other user if the player left mid game
         const client = clients[clientId];
 
         //Removing the client from the lobby
-        if (client.lobbyId !== null) {
+        if (client?.lobbyId) {
             
             const lobby = lobbies[client.lobbyId];
 
@@ -75,6 +102,12 @@ wsServer.on('request', request => {
             const clientId = result.clientId;
 
             switch(result.method) {
+                //Heartbeat
+                case 'pong': {
+                    clients[result.clientId].isAlive = true;
+                    break;
+                }
+
                 //Creating a new game
                 case 'create': {
                      
@@ -341,6 +374,12 @@ wsServer.on('request', request => {
                     
                     const client = clients[clientId];
                     const lobby = lobbies[result.lobbyId]!;
+                    
+                    //Early return if either player is not present
+                    if (!lobby.white || !lobby.black) {
+                        return;
+                    }
+                    
                     const board = lobby.board!;
                     const sourceSquare = board.squares.find((square: Square) => square.id === result.sourceSquareId)!;
                     const targetSquare = board.squares.find((square: Square) => square.id === result.targetSquareId)!;
@@ -376,7 +415,8 @@ wsServer.on('request', request => {
     clients[clientId] = {
         connection: connection,
         lobbyId: null,
-        colour: null
+        colour: null,
+        isAlive: true
     };
 
     const connectPayload = {
@@ -387,3 +427,8 @@ wsServer.on('request', request => {
     connection.send(JSON.stringify(connectPayload));
 
 })
+
+//Removing the heartbeat when the socket is closed
+// wsServer.on('close', () => {
+//     clearInterval(heartbeat);
+// })

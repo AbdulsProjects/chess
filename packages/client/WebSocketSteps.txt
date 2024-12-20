@@ -9,6 +9,3 @@ Have a local mode that works as it currently does, but add the option to create 
 7) Once "A" and "B" are in the lobby, either player can send a start game request. This notifies the other player, showing them the proposed board and allowing them to accept / decline
 8) The game is played out using actions passed to the server which manages the true state, and passes the board back after each move along with viable moves. The highlighting of moveable tiles is handled locally
 9) Once a winner is decided, the game is closed but the lobby remains open, allowing the players to create a new board state and request another game
-
-KNOWN ISSUES
-Bad actors can most likely break the server by modifying the intended JSON structure sent to the server due to the JSON.stringify (basically just an injection attack)
