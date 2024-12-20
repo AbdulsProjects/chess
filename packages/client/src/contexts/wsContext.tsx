@@ -49,12 +49,40 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
     const Connect = () => {
 
         const ws = new WebSocket('ws://localhost:8080');
+        let isAlive = false;
+
+        //Closing the connection if no ping is recieved in the interval
+        const heartbeat = setInterval(() => {
+            if (!isAlive) {
+                alert('You have been disconnected from the server. Please restart and try again');
+                clearInterval(heartbeat);
+                setOnlineState({
+                    wsConn: null,
+                    clientId: undefined,
+                    colour: undefined,
+                    lobby: undefined
+                });
+                isAlive = false;
+                ws.close();
+            }
+        }, 20000)
 
         ws.onmessage = message => {
-            
-            const response = JSON.parse(message.data);
 
+            const response = JSON.parse(message.data);
             switch(response.method) {
+                //Heartbeat
+                case 'ping': {
+                    isAlive = true;
+                    const payload = {
+                        method: 'pong',
+                        clientId: response.clientId
+                    };
+            
+                    ws.send(JSON.stringify(payload));
+                    break;
+                }
+                
                 //Connecting to the server
                 case 'connect': {
                     setOnlineStateCustom(prevState => ({
@@ -62,6 +90,7 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
                         wsConn: ws,
                         clientId: response.clientId
                     }));
+                    isAlive = true;
                     break;
                 }
 
