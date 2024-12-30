@@ -9,7 +9,8 @@ node_modules/
 /coverage
 
 # production
-/build
+public
+build
 
 # misc
 .DS_Store
@@ -23,3 +24,4 @@ yarn-debug.log*
 yarn-error.log*
 
 .firebase/
+
