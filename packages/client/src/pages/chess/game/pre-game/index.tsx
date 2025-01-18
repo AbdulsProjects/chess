@@ -4,7 +4,8 @@ import React from 'react'
 interface Props {
     DragPiece: (e: React.DragEvent<HTMLElement>, colour: 'black' | 'white', piece: string) => void,
     StartGame: () => void,
-    StandardGame: () => void
+    StandardGame: () => void,
+    setShowPresets: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export const PreGame = (props: Props) => {
@@ -32,6 +33,7 @@ export const PreGame = (props: Props) => {
             <div className='pre-game-button-container'>
                 <button className='chess-button' onClick={() => alert('This feature is currently in development')}>Create Piece</button>
                 <button className='chess-button' onClick={() => alert('This feature is currently in development')}>Import Piece</button>
+                <button className='chess-button' onClick={() => props.setShowPresets(prevState => !prevState)}>Presets</button>
                 <button className='chess-button' id='chess-standard-button' onClick={props.StandardGame}>Set Board</button>
                 <button className='chess-button' id='chess-start-button' onClick={props.StartGame}>Start Game</button>
             </div>

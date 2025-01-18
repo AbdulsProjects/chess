@@ -9,6 +9,7 @@ import { Board, Square, TargetingSquare } from "@react-chess/shared/src/chess/bo
 import { SentSuggestion } from "./suggestion-mode/sent-suggestion";
 import { RecievedSuggestion } from "./suggestion-mode/recieved-suggestion";
 import { IWsContext, WsContext } from "../../../contexts/wsContext";
+import { BoardPresets, PotentialPresets } from "./board-presets";
 
 //THINGS TO DO
 //Split the drop handler for on / off board and allow the removal of pieces using a double click
@@ -48,6 +49,7 @@ export function Chess() {
 
     //Storing the board / game state in state
     const [board, setBoard] = useState<Board>(new Board(localBoard));
+    const [showPresets, setShowPresets] = useState(false);
 
     const boardRef = useRef<Board>();
 
@@ -313,10 +315,9 @@ export function Chess() {
         setBoardAndHtml(newBoard);
     };
 
-    //Functions to set up different board types
-    const StandardGame = () => {
+    const setBoardPreset = (preset: PotentialPresets) => {
         const newBoard = board.clone();
-        newBoard.standardGame();
+        newBoard[preset]();
         setBoardAndHtml(newBoard);
     };
 
@@ -381,10 +382,12 @@ export function Chess() {
         <div className='chess-main-container' onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
             {board.gameState.inProgress && <CapturedPieces position='left' capturedPieces={board.gameState.capturedPieces}/>}
             {(board.outcome.checkmate || board.outcome.stalemate) && <GameOver outcome={board.outcome} setBoardAndHtml={setBoardAndHtml} board={board}/>}
-            {(!board.gameState.inProgress && !(board.outcome.checkmate || board.outcome.stalemate)) && <PreGame DragPiece={DragPiece} StandardGame={StandardGame} StartGame={StartGame} />}
+            {(!board.gameState.inProgress && !(board.outcome.checkmate || board.outcome.stalemate)) && <PreGame DragPiece={DragPiece} StandardGame={() => setBoardPreset('standardGame')} StartGame={StartGame} setShowPresets={setShowPresets}/>}
             {(!board.gameState.inProgress && onlineState?.lobby?.gameType === 'suggestion') && <SentSuggestion boardToSuggest={board.squares} SetSquares={SetSquares}/>}
+            {(showPresets && !board.gameState.inProgress) &&  <BoardPresets hidePresets={() => setShowPresets(false)} setBoardPreset={setBoardPreset}/>}
             {(!board.gameState.inProgress && onlineState?.lobby?.gameType === 'suggestion') && <RecievedSuggestion SetBoard={setBoardAndHtml} SetSquares={SetSquares}/>}
             {(board.gameState.promotions.white.length > 0 || board.gameState.promotions.black.length > 0) && board.gameState.inProgress && <Promotion PromotePiece={PromotePiece} colour={board.gameState.promotions.white.length > 0 ? 'white' : 'black'}/>}
+            
             <div className="chess-container">
                 <div className="y-labels">
                     {[...Array(8)].map((item, index) => 

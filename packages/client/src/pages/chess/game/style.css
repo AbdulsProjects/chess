@@ -4,6 +4,7 @@
     grid-template-columns: minmax(450px, 1fr) 675px minmax(450px, 1fr);
     grid-template-rows: 200px minmax(700px, calc(100vh - 300px));
     height: calc(100vh - 50px);
+    min-width: 1820px;
     background-color: var(--chess-background);
 }
 
@@ -28,10 +29,12 @@
 }
 
 .chess-side-container-left {
+    grid-area: 2 / 1 / 3 / 2;
     justify-self: right;
 }
 
 .chess-side-container-right {
+    grid-area: 2 / 3 / 3 / 4;
     justify-self: left;
     margin-left: 65px;
 }
@@ -92,7 +95,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 999;
 }
 
 img {

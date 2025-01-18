@@ -863,7 +863,6 @@ export class Board {
 
     //********************* BOARD PRESETS *********************
 
-    //Standard game
     standardGame() {
         this.clearBoard();
         this.addPiece([
@@ -899,7 +898,383 @@ export class Board {
             {squareId: 'E2', pieceId: 'pawn', colour: 'white'},
             {squareId: 'F2', pieceId: 'pawn', colour: 'white'},
             {squareId: 'G2', pieceId: 'pawn', colour: 'white'},
-            {squareId: 'H2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'H2', pieceId: 'pawn', colour: 'white'}
         ]);
     };
+
+    allQueens() {
+        this.clearBoard();
+        this.addPiece([
+            {squareId: 'A8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'B8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'C8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'D8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'E8', pieceId: 'king', colour: 'black'},
+            {squareId: 'F8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'G8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'H8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'A7', pieceId: 'queen', colour: 'black'},
+            {squareId: 'B7', pieceId: 'queen', colour: 'black'},
+            {squareId: 'C7', pieceId: 'queen', colour: 'black'},
+            {squareId: 'D7', pieceId: 'queen', colour: 'black'},
+            {squareId: 'E7', pieceId: 'queen', colour: 'black'},
+            {squareId: 'F7', pieceId: 'queen', colour: 'black'},
+            {squareId: 'G7', pieceId: 'queen', colour: 'black'},
+            {squareId: 'H7', pieceId: 'queen', colour: 'black'},
+
+            {squareId: 'A1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'B1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'C1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'D1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'E1', pieceId: 'king', colour: 'white'},
+            {squareId: 'F1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'G1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'H1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'A2', pieceId: 'queen', colour: 'white'},
+            {squareId: 'B2', pieceId: 'queen', colour: 'white'},
+            {squareId: 'C2', pieceId: 'queen', colour: 'white'},
+            {squareId: 'D2', pieceId: 'queen', colour: 'white'},
+            {squareId: 'E2', pieceId: 'queen', colour: 'white'},
+            {squareId: 'F2', pieceId: 'queen', colour: 'white'},
+            {squareId: 'G2', pieceId: 'queen', colour: 'white'},
+            {squareId: 'H2', pieceId: 'queen', colour: 'white'}
+        ]);
+    }
+
+    allKnights() {
+        this.clearBoard();
+        this.addPiece([
+            {squareId: 'A8', pieceId: 'knight', colour: 'black'},
+            {squareId: 'B8', pieceId: 'knight', colour: 'black'},
+            {squareId: 'C8', pieceId: 'knight', colour: 'black'},
+            {squareId: 'D8', pieceId: 'knight', colour: 'black'},
+            {squareId: 'E8', pieceId: 'king', colour: 'black'},
+            {squareId: 'F8', pieceId: 'knight', colour: 'black'},
+            {squareId: 'G8', pieceId: 'knight', colour: 'black'},
+            {squareId: 'H8', pieceId: 'knight', colour: 'black'},
+            {squareId: 'A7', pieceId: 'knight', colour: 'black'},
+            {squareId: 'B7', pieceId: 'knight', colour: 'black'},
+            {squareId: 'C7', pieceId: 'knight', colour: 'black'},
+            {squareId: 'D7', pieceId: 'knight', colour: 'black'},
+            {squareId: 'E7', pieceId: 'knight', colour: 'black'},
+            {squareId: 'F7', pieceId: 'knight', colour: 'black'},
+            {squareId: 'G7', pieceId: 'knight', colour: 'black'},
+            {squareId: 'H7', pieceId: 'knight', colour: 'black'},
+
+            {squareId: 'A1', pieceId: 'knight', colour: 'white'},
+            {squareId: 'B1', pieceId: 'knight', colour: 'white'},
+            {squareId: 'C1', pieceId: 'knight', colour: 'white'},
+            {squareId: 'D1', pieceId: 'knight', colour: 'white'},
+            {squareId: 'E1', pieceId: 'king', colour: 'white'},
+            {squareId: 'F1', pieceId: 'knight', colour: 'white'},
+            {squareId: 'G1', pieceId: 'knight', colour: 'white'},
+            {squareId: 'H1', pieceId: 'knight', colour: 'white'},
+            {squareId: 'A2', pieceId: 'knight', colour: 'white'},
+            {squareId: 'B2', pieceId: 'knight', colour: 'white'},
+            {squareId: 'C2', pieceId: 'knight', colour: 'white'},
+            {squareId: 'D2', pieceId: 'knight', colour: 'white'},
+            {squareId: 'E2', pieceId: 'knight', colour: 'white'},
+            {squareId: 'F2', pieceId: 'knight', colour: 'white'},
+            {squareId: 'G2', pieceId: 'knight', colour: 'white'},
+            {squareId: 'H2', pieceId: 'knight', colour: 'white'}
+        ]);
+    }
+
+    mirror() {
+        this.clearBoard();
+        this.addPiece([
+            {squareId: 'A8', pieceId: 'rook', colour: 'white'},
+            {squareId: 'B8', pieceId: 'knight', colour: 'white'},
+            {squareId: 'C8', pieceId: 'bishop', colour: 'white'},
+            {squareId: 'D8', pieceId: 'queen', colour: 'white'},
+            {squareId: 'E8', pieceId: 'king', colour: 'white'},
+            {squareId: 'F8', pieceId: 'bishop', colour: 'white'},
+            {squareId: 'G8', pieceId: 'knight', colour: 'white'},
+            {squareId: 'H8', pieceId: 'rook', colour: 'white'},
+            {squareId: 'A7', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'B7', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'C7', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'D7', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'E7', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'F7', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'G7', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'H7', pieceId: 'pawn', colour: 'white'},
+
+            {squareId: 'A1', pieceId: 'rook', colour: 'black'},
+            {squareId: 'B1', pieceId: 'knight', colour: 'black'},
+            {squareId: 'C1', pieceId: 'bishop', colour: 'black'},
+            {squareId: 'D1', pieceId: 'queen', colour: 'black'},
+            {squareId: 'E1', pieceId: 'king', colour: 'black'},
+            {squareId: 'F1', pieceId: 'bishop', colour: 'black'},
+            {squareId: 'G1', pieceId: 'knight', colour: 'black'},
+            {squareId: 'H1', pieceId: 'rook', colour: 'black'},
+            {squareId: 'A2', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'B2', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'C2', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'D2', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'E2', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'F2', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'G2', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'H2', pieceId: 'pawn', colour: 'black'}
+        ]);
+    }
+
+    colourBlind() {
+        
+        const randomColours = Array.from({ length: 11 },() => Math.round(Math.random()));
+        
+        this.clearBoard();
+        this.addPiece([
+            //These pieces are always the same as they can result in an immediate checkmate
+            {squareId: 'D8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'E8', pieceId: 'king', colour: 'black'},
+            {squareId: 'D7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'E7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'F7', pieceId: 'pawn', colour: 'black'},
+            
+            {squareId: 'D1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'E1', pieceId: 'king', colour: 'white'},
+            {squareId: 'D2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'E2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'F2', pieceId: 'pawn', colour: 'white'},
+            
+            //These pieces are randomly asigned a colour symmetrically
+            {squareId: 'H8', pieceId: 'rook', colour: randomColours[0] ? 'black' : 'white'},
+            {squareId: 'G8', pieceId: 'knight', colour: randomColours[1] ? 'black' : 'white'},
+            {squareId: 'F8', pieceId: 'bishop', colour: randomColours[2] ? 'black' : 'white'},
+            {squareId: 'C8', pieceId: 'bishop', colour: randomColours[3] ? 'black' : 'white'},
+            {squareId: 'B8', pieceId: 'knight', colour: randomColours[4] ? 'black' : 'white'},
+            {squareId: 'A8', pieceId: 'rook', colour: randomColours[5] ? 'black' : 'white'},
+            {squareId: 'H7', pieceId: 'pawn', colour: randomColours[6] ? 'black' : 'white'},
+            {squareId: 'G7', pieceId: 'pawn', colour: randomColours[7] ? 'black' : 'white'},
+            {squareId: 'C7', pieceId: 'pawn', colour: randomColours[8] ? 'black' : 'white'},
+            {squareId: 'B7', pieceId: 'pawn', colour: randomColours[9] ? 'black' : 'white'},
+            {squareId: 'A7', pieceId: 'pawn', colour: randomColours[10] ? 'black' : 'white'},
+
+            {squareId: 'A1', pieceId: 'rook', colour: randomColours[0] ? 'white' : 'black'},
+            {squareId: 'B1', pieceId: 'knight', colour: randomColours[1] ? 'white' : 'black'},
+            {squareId: 'C1', pieceId: 'bishop', colour: randomColours[2] ? 'white' : 'black'},
+            {squareId: 'F1', pieceId: 'bishop', colour: randomColours[3] ? 'white' : 'black'},
+            {squareId: 'G1', pieceId: 'knight', colour: randomColours[4] ? 'white' : 'black'},
+            {squareId: 'H1', pieceId: 'rook', colour: randomColours[5] ? 'white' : 'black'},
+            {squareId: 'A2', pieceId: 'pawn', colour: randomColours[6] ? 'white' : 'black'},
+            {squareId: 'B2', pieceId: 'pawn', colour: randomColours[7] ? 'white' : 'black'},
+            {squareId: 'C2', pieceId: 'pawn', colour: randomColours[8] ? 'white' : 'black'},
+            {squareId: 'G2', pieceId: 'pawn', colour: randomColours[9] ? 'white' : 'black'},
+            {squareId: 'H2', pieceId: 'pawn', colour: randomColours[10] ? 'white' : 'black'}
+        ]);
+    }
+
+    revolutionBlack() {
+        this.clearBoard();
+        this.addPiece([
+            {squareId: 'B1', pieceId: 'knight', colour: 'white'},
+            {squareId: 'C1', pieceId: 'bishop', colour: 'white'},
+            {squareId: 'D1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'E1', pieceId: 'king', colour: 'white'},
+            {squareId: 'F1', pieceId: 'bishop', colour: 'white'},
+            {squareId: 'G1', pieceId: 'knight', colour: 'white'},
+
+            {squareId: 'A8', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'B8', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'C8', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'D8', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'E8', pieceId: 'king', colour: 'black'},
+            {squareId: 'F8', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'G8', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'H8', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'A7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'B7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'C7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'D7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'E7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'F7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'G7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'H7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'A6', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'B6', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'C6', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'D6', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'E6', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'F6', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'G6', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'H6', pieceId: 'pawn', colour: 'black'}
+        ]);
+    }
+
+    revolutionWhite() {
+        this.clearBoard();
+        this.addPiece([
+            {squareId: 'B8', pieceId: 'knight', colour: 'black'},
+            {squareId: 'C8', pieceId: 'bishop', colour: 'black'},
+            {squareId: 'D8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'E8', pieceId: 'king', colour: 'black'},
+            {squareId: 'F8', pieceId: 'bishop', colour: 'black'},
+            {squareId: 'G8', pieceId: 'knight', colour: 'black'},
+
+            {squareId: 'A1', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'B1', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'C1', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'D1', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'E1', pieceId: 'king', colour: 'white'},
+            {squareId: 'F1', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'G1', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'H1', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'A2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'B2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'C2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'D2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'E2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'F2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'G2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'H2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'A3', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'B3', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'C3', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'D3', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'E3', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'F3', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'G3', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'H3', pieceId: 'pawn', colour: 'white'}
+        ]);
+    }
+
+    sleeperAgent() {
+
+        const flippedPiece = Math.floor(Math.random() * 6);
+
+        this.clearBoard();
+        this.addPiece([
+            {squareId: 'A8', pieceId: 'rook', colour: flippedPiece === 0 ? 'white' : 'black'},
+            {squareId: 'B8', pieceId: 'knight', colour: flippedPiece === 1 ? 'white' : 'black'},
+            {squareId: 'C8', pieceId: 'bishop', colour: flippedPiece === 2 ? 'white' : 'black'},
+            {squareId: 'D8', pieceId: 'queen', colour: 'black'},
+            {squareId: 'E8', pieceId: 'king', colour: 'black'},
+            {squareId: 'F8', pieceId: 'bishop', colour: flippedPiece === 3 ? 'white' : 'black'},
+            {squareId: 'G8', pieceId: 'knight', colour: flippedPiece === 4 ? 'white' : 'black'},
+            {squareId: 'H8', pieceId: 'rook', colour: flippedPiece === 5 ? 'white' : 'black'},
+            {squareId: 'A7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'B7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'C7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'D7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'E7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'F7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'G7', pieceId: 'pawn', colour: 'black'},
+            {squareId: 'H7', pieceId: 'pawn', colour: 'black'},
+
+            {squareId: 'A1', pieceId: 'rook', colour: flippedPiece === 5 ? 'black' : 'white'},
+            {squareId: 'B1', pieceId: 'knight', colour: flippedPiece === 4 ? 'black' : 'white'},
+            {squareId: 'C1', pieceId: 'bishop', colour: flippedPiece === 3 ? 'black' : 'white'},
+            {squareId: 'D1', pieceId: 'queen', colour: 'white'},
+            {squareId: 'E1', pieceId: 'king', colour: 'white'},
+            {squareId: 'F1', pieceId: 'bishop', colour: flippedPiece === 2 ? 'black' : 'white'},
+            {squareId: 'G1', pieceId: 'knight', colour: flippedPiece === 1 ? 'black' : 'white'},
+            {squareId: 'H1', pieceId: 'rook', colour: flippedPiece === 0 ? 'black' : 'white'},
+            {squareId: 'A2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'B2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'C2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'D2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'E2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'F2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'G2', pieceId: 'pawn', colour: 'white'},
+            {squareId: 'H2', pieceId: 'pawn', colour: 'white'}
+        ]);
+    };
+
+    balancedChaos() {
+        this.clearBoard();
+
+        const pieces = ['pawn', 'rook', 'knight', 'bishop', 'queen'];
+        const selectedPieces = [];
+
+        for (let i = 0; i < 15; i++) {
+            selectedPieces.push(pieces[Math.floor(Math.random() * 5)]);
+        }
+
+        this.addPiece([
+            {squareId: 'A8', pieceId: selectedPieces[0], colour: 'black'},
+            {squareId: 'B8', pieceId: selectedPieces[1], colour: 'black'},
+            {squareId: 'C8', pieceId: selectedPieces[2], colour: 'black'},
+            {squareId: 'D8', pieceId: selectedPieces[3], colour: 'black'},
+            {squareId: 'E8', pieceId: 'king', colour: 'black'},
+            {squareId: 'F8', pieceId: selectedPieces[4], colour: 'black'},
+            {squareId: 'G8', pieceId: selectedPieces[5], colour: 'black'},
+            {squareId: 'H8', pieceId: selectedPieces[6], colour: 'black'},
+            {squareId: 'A7', pieceId: selectedPieces[7], colour: 'black'},
+            {squareId: 'B7', pieceId: selectedPieces[8], colour: 'black'},
+            {squareId: 'C7', pieceId: selectedPieces[9], colour: 'black'},
+            {squareId: 'D7', pieceId: selectedPieces[10], colour: 'black'},
+            {squareId: 'E7', pieceId: selectedPieces[11], colour: 'black'},
+            {squareId: 'F7', pieceId: selectedPieces[12], colour: 'black'},
+            {squareId: 'G7', pieceId: selectedPieces[13], colour: 'black'},
+            {squareId: 'H7', pieceId: selectedPieces[14], colour: 'black'},
+        ]);
+
+        //Randomising the pieces so they're not in the same order for white
+        for (let i = 0; i < selectedPieces.length; i++) {
+            const randomIndex = Math.floor((Math.random() * (selectedPieces.length - i)) + i);
+            [selectedPieces[i], selectedPieces[randomIndex]] = [selectedPieces[randomIndex], selectedPieces[i]];
+        }
+        
+        this.addPiece([
+            {squareId: 'A1', pieceId: selectedPieces[0], colour: 'white'},
+            {squareId: 'B1', pieceId: selectedPieces[1], colour: 'white'},
+            {squareId: 'C1', pieceId: selectedPieces[2], colour: 'white'},
+            {squareId: 'D1', pieceId: selectedPieces[3], colour: 'white'},
+            {squareId: 'E1', pieceId: 'king', colour: 'white'},
+            {squareId: 'F1', pieceId: selectedPieces[4], colour: 'white'},
+            {squareId: 'G1', pieceId: selectedPieces[5], colour: 'white'},
+            {squareId: 'H1', pieceId: selectedPieces[6], colour: 'white'},
+            {squareId: 'A2', pieceId: selectedPieces[7], colour: 'white'},
+            {squareId: 'B2', pieceId: selectedPieces[8], colour: 'white'},
+            {squareId: 'C2', pieceId: selectedPieces[9], colour: 'white'},
+            {squareId: 'D2', pieceId: selectedPieces[10], colour: 'white'},
+            {squareId: 'E2', pieceId: selectedPieces[11], colour: 'white'},
+            {squareId: 'F2', pieceId: selectedPieces[12], colour: 'white'},
+            {squareId: 'G2', pieceId: selectedPieces[13], colour: 'white'},
+            {squareId: 'H2', pieceId: selectedPieces[14], colour: 'white'}
+        ]);
+    };
+
+    pureChaos() {
+        this.clearBoard();
+
+        const pieces = ['pawn', 'rook', 'knight', 'bishop', 'queen'];
+        this.addPiece([
+            {squareId: 'A8', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'B8', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'C8', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'D8', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'E8', pieceId: 'king', colour: 'black'},
+            {squareId: 'F8', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'G8', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'H8', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'A7', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'B7', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'C7', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'D7', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'E7', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'F7', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'G7', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+            {squareId: 'H7', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'black'},
+
+            {squareId: 'A1', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'B1', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'C1', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'D1', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'E1', pieceId: 'king', colour: 'white'},
+            {squareId: 'F1', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'G1', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'H1', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'A2', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'B2', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'C2', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'D2', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'E2', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'F2', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'G2', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'},
+            {squareId: 'H2', pieceId: pieces[Math.floor(Math.random() * 5)], colour: 'white'}
+        ]);
+    };
+
 };
