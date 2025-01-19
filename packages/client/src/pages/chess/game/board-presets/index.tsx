@@ -31,7 +31,7 @@ export const BoardPresets = (props: Props) => {
                         <button className='chess-button' onClick={() => props.setBoardPreset('allQueens')}>Set Board</button>
                     </div>
                     <div className='chess-board-presets-preset-body-container'>
-                        <p>King Crunch and his queens CHANGE THIS, THIS IS CRINGE</p>
+                        <p>Every piece that isn't a king is now a queen</p>
                     </div>
                 </div>
                 <div className='chess-board-presets-preset-container'>
@@ -54,7 +54,7 @@ export const BoardPresets = (props: Props) => {
                 </div>
                 <div className='chess-board-presets-preset-container'>
                     <div className='chess-board-presets-preset-header-container'>
-                        <p>Joust / Take on the L but I think this might also be cringe</p>
+                        <p>Joust</p>
                         <button className='chess-button' onClick={() => props.setBoardPreset('allKnights')}>Set Board</button>
                     </div>
                     <div className='chess-board-presets-preset-body-container'>
