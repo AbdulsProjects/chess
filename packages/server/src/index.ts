@@ -405,6 +405,30 @@ wsServer.on('request', request => {
 
                     break;
                 }
+
+                case 'promote-piece': {
+                    
+                    const client = clients[clientId];
+                    const lobby = lobbies[result.lobbyId]!;
+                    
+                    const board = lobby.board!;
+
+                    //Exit if it's not the player's piece to promote
+                    if (client.colour !== board.gameState.promotions.nextPromotion?.colour) {
+                        return;
+                    };
+
+                    board.promotePiece(result.newPiece);
+
+                    const payload = {
+                        method: 'promote-piece',
+                        lobby: obfuscateLobby(lobby),
+                    };
+
+                    sendToMultipleClients([lobby.black!, lobby.white!], payload);
+
+                    break;
+                }
             }
 
         }

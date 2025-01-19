@@ -1,7 +1,7 @@
 .chess-board-presets-main-container {
     height: 675px;
     width: 80%;
-    z-index: 99;
+    z-index: 2;
     font-family: 'Courier New', Courier, monospace;
     color: rgba(117, 29, 29, 0.904);
 }

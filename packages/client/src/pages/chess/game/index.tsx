@@ -56,7 +56,7 @@ export function Chess() {
     const { onlineState }  = useContext(WsContext) as IWsContext;
 
     boardRef.current = board;
-
+    
     //Checking for promotions whenever the board is updated
     useEffect(() => {
 
@@ -102,23 +102,25 @@ export function Chess() {
     //Setting up the callbacks for online functionality
     useEffect(() => {
         
-        const requestMove = (event: MessageEvent<any>) => {
+        const messageListener = (event: MessageEvent<any>) => {
             const data = JSON.parse(event.data);
-            if (data.method === 'request-move') {
+            if (data.method === 'request-move' || data.method === 'promote-piece') {
                 const {_squares, _outcome, _gameState} = data.lobby.board;
                 const newBoard = new Board(_squares, _outcome, _gameState);
                 setBoardAndHtml(newBoard);
-                const moveAudio = new Audio('audio/' + data.action + '.mp3');
-                moveAudio.play();
+                if (data.method === 'request-move') {
+                    const moveAudio = new Audio('audio/' + data.action + '.mp3');
+                    moveAudio.play();
+                }
             };
         }
 
         //Moving a piece
-        onlineState.wsConn?.addEventListener("message", requestMove);
+        onlineState.wsConn?.addEventListener("message", messageListener);
 
         //Removing the event handler on unmount
         return () => {
-            onlineState.wsConn?.removeEventListener("message", requestMove);
+            onlineState.wsConn?.removeEventListener("message", messageListener);
         };
 
     }, []);
@@ -192,14 +194,30 @@ export function Chess() {
     //Used to promote a piece
     const PromotePiece = (newPiece: Piece) => {
 
-        //Grabbing the piece to promote
-        const newBoard = board.clone();
-
-        //Promoting the piece
-        newBoard.promotePiece(newPiece);
-
-        //Updating state
-        setBoardAndHtml(newBoard);
+        //Promoting the piece in an online lobby
+        if (onlineState.lobby !== undefined) {
+            if (onlineState.lobby !== undefined) {
+                
+                //Online behaviour
+                const payload = {
+                    method: 'promote-piece',
+                    newPiece: newPiece,
+                    clientId: onlineState.clientId,
+                    lobbyId: onlineState.lobby!.lobbyId
+                };
+                onlineState.wsConn!.send(JSON.stringify(payload));
+            }
+        //Promoting the piece in a local lobby
+        } else {
+            //Grabbing the piece to promote
+            const newBoard = board.clone();
+    
+            //Promoting the piece
+            newBoard.promotePiece(newPiece);
+    
+            //Updating state
+            setBoardAndHtml(newBoard);
+        }
     };
 
     //Returning a boolean to specify if the interactivity should be disabled
@@ -254,7 +272,7 @@ export function Chess() {
         const newBoard = board.clone();
         if(newBoard.gameState.inProgress) {
             //Returning if trying to grab the other player's piece
-            if (colour !== newBoard.gameState.currentPlayer) { return; }
+            if (colour !== newBoard.gameState.currentPlayer || newBoard.gameState.promotions.nextPromotion) { return; }
 
             //Returning if trying to move to an invalid square
             const targeting = sourceSquare.targeting;
@@ -386,7 +404,7 @@ export function Chess() {
             {(!board.gameState.inProgress && onlineState?.lobby?.gameType === 'suggestion') && <SentSuggestion boardToSuggest={board.squares} SetSquares={SetSquares}/>}
             {(showPresets && !board.gameState.inProgress) &&  <BoardPresets hidePresets={() => setShowPresets(false)} setBoardPreset={setBoardPreset}/>}
             {(!board.gameState.inProgress && onlineState?.lobby?.gameType === 'suggestion') && <RecievedSuggestion SetBoard={setBoardAndHtml} SetSquares={SetSquares}/>}
-            {(board.gameState.promotions.white.length > 0 || board.gameState.promotions.black.length > 0) && board.gameState.inProgress && <Promotion PromotePiece={PromotePiece} colour={board.gameState.promotions.white.length > 0 ? 'white' : 'black'}/>}
+            {((board.gameState.promotions.white.length > 0 && (onlineState?.colour ?? 'white') === 'white') || (board.gameState.promotions.black.length > 0 && (onlineState?.colour ?? 'black') === 'black')) && board.gameState.inProgress && <Promotion PromotePiece={PromotePiece} colour={board.gameState.promotions.white.length > 0 ? 'white' : 'black'}/>}
             
             <div className="chess-container">
                 <div className="y-labels">

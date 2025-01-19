@@ -172,6 +172,14 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
                     }));
                     break;
                 }
+                
+                case 'promote-piece': {
+                    setOnlineStateCustom(prevState => ({
+                        ...prevState,
+                        lobby: response.lobby
+                    }));
+                    break;
+                }
 
                 case 'restart-game': {
                     setOnlineStateCustom(prevState => ({

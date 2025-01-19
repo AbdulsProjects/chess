@@ -216,6 +216,9 @@ export class Board {
     //Moving a piece
     movePiece(oldSquareId: string, newSquareId: string) {
 
+        //Early return if a promotion is in progress
+        if (this._gameState.promotions.nextPromotion) { return; }
+
         const oldSquare = this._squares.find(square => square.id === oldSquareId)!;
         const colour = oldSquare.colour!;
         const piece = oldSquare.piece!;
