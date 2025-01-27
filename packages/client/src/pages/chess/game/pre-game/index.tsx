@@ -10,7 +10,7 @@ interface Props {
 }
 
 export const PreGame = (props: Props) => {
-    console.log(props.onlineGame)
+    
     return (
         <div className='pre-game-container top-mid-container'>
             <div className='pre-game-tray'>
