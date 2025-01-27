@@ -400,7 +400,7 @@ export function Chess() {
         <div className='chess-main-container' onDrop={BinPiece} onDragOver={DivPreventDefault} onDragStart={DivPreventDefault}>
             {board.gameState.inProgress && <CapturedPieces position='left' capturedPieces={board.gameState.capturedPieces}/>}
             {(board.outcome.checkmate || board.outcome.stalemate) && <GameOver outcome={board.outcome} setBoardAndHtml={setBoardAndHtml} board={board}/>}
-            {(!board.gameState.inProgress && !(board.outcome.checkmate || board.outcome.stalemate)) && <PreGame DragPiece={DragPiece} StandardGame={() => setBoardPreset('standardGame')} StartGame={StartGame} setShowPresets={setShowPresets}/>}
+            {(!board.gameState.inProgress && !(board.outcome.checkmate || board.outcome.stalemate)) && <PreGame DragPiece={DragPiece} StandardGame={() => setBoardPreset('standardGame')} StartGame={StartGame} setShowPresets={setShowPresets} onlineGame={Boolean(onlineState.lobby)}/>}
             {(!board.gameState.inProgress && onlineState?.lobby?.gameType === 'suggestion') && <SentSuggestion boardToSuggest={board.squares} SetSquares={SetSquares}/>}
             {(showPresets && !board.gameState.inProgress) &&  <BoardPresets hidePresets={() => setShowPresets(false)} setBoardPreset={setBoardPreset}/>}
             {(!board.gameState.inProgress && onlineState?.lobby?.gameType === 'suggestion') && <RecievedSuggestion SetBoard={setBoardAndHtml} SetSquares={SetSquares}/>}
