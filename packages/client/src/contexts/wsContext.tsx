@@ -48,8 +48,7 @@ export const WsContextProvider: React.FC<{children: React.ReactNode}> = ({ child
 
     const Connect = () => {
 
-        //TODO: Create proper prod deployment process. websocket address is: https://free-sour-slug.glitch.me
-        const ws = new WebSocket('ws://localhost:8080');
+        const ws = new WebSocket(process.env.REACT_APP_SERVER_ENDPOINT ?? 'ws://localhost:8080');
         let isAlive = false;
 
         //Closing the connection if no ping is recieved in the interval

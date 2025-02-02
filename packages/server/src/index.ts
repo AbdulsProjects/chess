@@ -215,7 +215,7 @@ wsServer.on('request', request => {
                 //Returning all lobbies with obfuscated passwords and clientIds
                 case 'return-lobbies': {
                     
-                    const obfuscatedLobbies: Lobbies = structuredClone(lobbies);
+                    const obfuscatedLobbies: Lobbies = JSON.parse(JSON.stringify(lobbies));
 
                     for (var key of Object.keys(obfuscatedLobbies)) {
                         obfuscatedLobbies[key] = obfuscateLobby(obfuscatedLobbies[key]);
